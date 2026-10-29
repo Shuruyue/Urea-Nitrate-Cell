@@ -27,6 +27,9 @@ N_E_UOR = 6           # CO(NH2)2 -> N2 + CO2 的電子數
 DG_F = {"H2O": -237.13, "OH-": -157.24, "CO2(g)": -394.36, "CO3^2-": -527.81,
         "NO3-": -111.25, "NH3(aq)": -26.50,
         # 尿素(aq) = 尿素(s) -197.33 + 溶解自由能 (ΔH_sol 16.91 kJ, ΔS_sol 62.59 J/K)
+        # 註：thermo_check() 的焓基準用 NBS 的 ΔfH°(urea, aq) = -317.65，配 ΔfH°(urea, s) = -333.51
+        #     隱含 ΔH_sol = 15.86 kJ，與此處 16.91 來源不同；改用 15.86 會使 E°(UOR, CO2)
+        #     由 0.0723 變為 0.0741 V（+1.8 mV），不影響任何結論，故維持原值
         "urea(aq)": -197.33 + (16.91 - 298.15 * 62.59e-3)}
 
 # 標準電位（V vs RHE, pH 14）；thermo_check() 會重算並與此表比對
@@ -50,7 +53,7 @@ def thermo_check(verbose=False):
     e_no3 = -((G["NH3(aq)"] + 9 * G["OH-"]) - (G["NO3-"] + 6 * G["H2O"])) / (8 * k)
     out = dict(HER_SHE=e_her, UOR_calc=e_uor - e_her, UOR_CO3=e_uor3 - e_her,
                NO3RR=e_no3 - e_her)
-    # 焓基準：CO(NH2)2(aq) + H2O(l) -> N2 + CO2(g) + 3H2，ΔH°/6F（熱中性電壓）
+    # 焓基準：CO(NH2)2(aq) + H2O(l) -> N2 + CO2(g) + 3H2，ΔH°/6F（熱中性電壓）；尿素 ΔfH° 見 DG_F 的註
     dH = -393.51 - (-317.65) - (-285.83)
     out["UOR_dH"] = dH / (6 * k)
     if verbose:
@@ -152,7 +155,7 @@ S1 = dict(
     E10_UOR=1.335, b_UOR=0.0442,   # [Y-報告] ANP，1 M NaOH + 0.5 M urea（Fig. 11b, 11c）
     E10_OER=1.515, b_OER=0.060,    # E10 [Y-報告]；b [Y-擬合] 55–65 mV/dec（Fig. 11a）
     E10_NO3=0.037, b_NO3=0.099,    # [Y-擬合] ANP，100 mM NaNO3 + 1 M NaOH（Fig. 3a/3b），已扣 iR
-    gamma=1.0, C_ref=100.0,        # 反應級數 [Y-擬合] 0.87 ± 0.13，取一級
+    gamma=1.0, C_ref=100.0,        # 反應級數 [Y-擬合] 0.87 ± 0.14，取一級
     E10_HER=-0.202, b_HER=0.081,   # [Y-擬合] ANP，0 mM NaNO3（Fig. 3b 黑線）
     delta_um=43.0,                 # 擴散層 [Y-擬合]（Fig. 3b 1 mM、10 mM 曲線；攪拌條件）
     C_NO3=100.0,                   # 極化曲線比較用濃度 = 校正濃度

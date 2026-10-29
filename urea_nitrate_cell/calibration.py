@@ -15,6 +15,11 @@ from . import model as m
 from .yao2025 import FIG3B, FIG11A_UOR, FIG11A_OER, REPORTED
 
 
+def _residual_variance(s):
+    """殘差變異數的不偏估計 SSR / (n − p)，用於共變異矩陣（除以 n 會低估標準誤差）。"""
+    return np.sum(s.fun ** 2) / (s.fun.size - s.x.size)
+
+
 # ---------------------------------------------------------------------------
 # 陽極（Fig. 11a）
 # ---------------------------------------------------------------------------
@@ -44,7 +49,7 @@ def fit_anode():
         return anode_resid(dict(base, E10_UOR=x[0], b_UOR=x[1], E10_OER=x[2], b_OER=x[3]), x[4])
     s = least_squares(res, [1.33, 0.044, 1.51, 0.06, 1.0],
                       bounds=([1.2, 0.01, 1.4, 0.03, 0], [1.45, 0.2, 1.6, 0.25, 5]))
-    cov = np.linalg.inv(s.jac.T @ s.jac) * np.mean(s.fun ** 2)
+    cov = np.linalg.inv(s.jac.T @ s.jac) * _residual_variance(s)
     out["free"] = dict(zip(["E10_UOR", "b_UOR", "E10_OER", "b_OER", "Ru"], s.x.tolist()))
     out["free_std"] = dict(zip(out["free"], np.sqrt(np.diag(cov)).tolist()))
     out["free"]["rms"] = float(np.sqrt(np.mean(s.fun ** 2)))
@@ -95,7 +100,7 @@ def fit_cathode(gamma=None):
     s = least_squares(lambda x: cathode_resid(unpack(x)), [x0[k] for k in keys],
                       bounds=([lo[k] for k in keys], [hi[k] for k in keys]))
     q = unpack(s.x)
-    cov = np.linalg.inv(s.jac.T @ s.jac) * np.mean(s.fun ** 2)
+    cov = np.linalg.inv(s.jac.T @ s.jac) * _residual_variance(s)
     std = dict(zip(keys, np.sqrt(np.diag(cov)).tolist()))
     rms = {C: float(np.sqrt(np.mean(cathode_resid(q, (C,)) ** 2))) for C in (0, 1, 10, 50, 100)}
     return dict(params=q, std=std, rms_fit=float(np.sqrt(np.mean(s.fun ** 2))), rms_by_C=rms,

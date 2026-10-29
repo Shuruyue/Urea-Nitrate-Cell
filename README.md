@@ -119,9 +119,9 @@ The measured LSV potential contains an uncompensated ohmic drop, so the fit uses
 |---|---|---|
 | UOR: E₁₀, b | 1.335 V, 44.2 mV/dec | Yao 2025 (reported); reproduces Fig. 11a with 8.5 % RMS error |
 | OER: E₁₀, b | 1.515 V, 60 mV/dec | E₁₀ reported; b fitted to Fig. 11a |
-| NO₃RR: E₁₀, b (100 mM) | +0.037 ± 0.005 V, 99 ± 5 mV/dec | fitted to Fig. 3b |
-| Reaction order γ | 1 (free fit 0.87 ± 0.13) | fitted to Fig. 3b |
-| HER: E₁₀, b | −0.202 ± 0.004 V, 81 ± 10 mV/dec | fitted to Fig. 3b (0 mM) |
+| NO₃RR: E₁₀, b (100 mM) | +0.037 ± 0.005 V, 99 ± 6 mV/dec | fitted to Fig. 3b |
+| Reaction order γ | 1 (free fit 0.87 ± 0.14) | fitted to Fig. 3b |
+| HER: E₁₀, b | −0.202 ± 0.004 V, 81 ± 11 mV/dec | fitted to Fig. 3b (0 mM) |
 | Diffusion layer δ | 43 ± 6 µm | fitted to Fig. 3b |
 | NO₃⁻ diffusion coefficient D | 1.902 × 10⁻⁵ cm² s⁻¹ | CRC Handbook |
 | Ohmic resistance R_Ω | 1 Ω cm² | assumed (zero-gap AEM cell) |
@@ -164,7 +164,7 @@ Calibration is not independent validation: the S1 parameters are fitted to the s
 
 ## Limitations
 
-S1 is fitted to a single study; S2, S3 and R_Ω are assumptions. The model uses single Tafel slopes, a fixed diffusion layer and HER kinetics unaffected by nitrate, and does not include by-products (nitrite, over-oxidation of urea), pH drift or membrane potentials.
+S1 is fitted to a single study; S2, S3 and R_Ω are assumptions. The model uses single Tafel slopes, a fixed diffusion layer and HER kinetics unaffected by nitrate, and does not include by-products (nitrite, over-oxidation of urea), pH drift or membrane potentials. Urea is assumed to be in excess at the anode (no urea mass-transport limit), so the batch simulation tracks only the nitrate concentration.
 
 ## References
 
