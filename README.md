@@ -1,6 +1,6 @@
-# Urea-Nitrate-Direct-Cell
+# Urea-Nitrate-Cell
 
-[![CI](https://github.com/Shuruyue/Urea-Nitrate-Direct-Cell/actions/workflows/ci.yml/badge.svg)](https://github.com/Shuruyue/Urea-Nitrate-Direct-Cell/actions/workflows/ci.yml)
+[![CI](https://github.com/Shuruyue/Urea-Nitrate-Cell/actions/workflows/ci.yml/badge.svg)](https://github.com/Shuruyue/Urea-Nitrate-Cell/actions/workflows/ci.yml)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
@@ -30,8 +30,8 @@ All potentials are V vs RHE at pH 14 and 25 °C; current densities are in mA cm�
 ### Installation
 
 ```bash
-git clone https://github.com/Shuruyue/Urea-Nitrate-Direct-Cell.git
-cd Urea-Nitrate-Direct-Cell
+git clone https://github.com/Shuruyue/Urea-Nitrate-Cell.git
+cd Urea-Nitrate-Cell
 pip install -e ".[dev]"
 ```
 
@@ -64,7 +64,7 @@ python scripts/validate.py --markdown   # 47 checks → outputs/validation_table
 ## Project Structure
 
 ```
-Urea-Nitrate-Direct-Cell/
+Urea-Nitrate-Cell/
 ├── urea_nitrate_cell/
 │   ├── model.py         # thermodynamics, kinetics, full-cell solver, sensitivity, batch simulation
 │   ├── yao2025.py       # LSV data digitized from Yao et al. 2025 (Figs. 3b, 11a, 14d)
