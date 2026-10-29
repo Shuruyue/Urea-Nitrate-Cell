@@ -26,6 +26,6 @@ if __name__ == "__main__":
         print("   各濃度 RMS：", {C: f"{v*100:.1f}%" for C, v in ca["rms_by_C"].items()},
               "（50 mM 未參與擬合）")
     os.makedirs(_path.OUTPUTS, exist_ok=True)
-    json.dump(dict(anode=an, cathode_free=ca_free, cathode_g1=ca_g1),
-              open(os.path.join(_path.OUTPUTS, "calibration_result.json"), "w"), indent=1, ensure_ascii=False,
-              default=lambda o: float(o))
+    with open(os.path.join(_path.OUTPUTS, "calibration_result.json"), "w", encoding="utf-8") as f:
+        json.dump(dict(anode=an, cathode_free=ca_free, cathode_g1=ca_g1), f, indent=1, ensure_ascii=False,
+                  default=lambda o: float(o))

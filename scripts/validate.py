@@ -27,9 +27,11 @@ if __name__ == "__main__":
     n_fail = sum(not r["ok"] for r in rows)
     print(f"\n共 {len(rows)} 項，失敗 {n_fail} 項")
     os.makedirs(_path.OUTPUTS, exist_ok=True)
-    json.dump(rows, open(os.path.join(_path.OUTPUTS, "validation_table.json"), "w"), ensure_ascii=False, indent=1,
-              default=lambda o: float(o) if isinstance(o, (np.floating, np.integer)) else str(o))
+    with open(os.path.join(_path.OUTPUTS, "validation_table.json"), "w", encoding="utf-8") as f:
+        json.dump(rows, f, ensure_ascii=False, indent=1,
+                  default=lambda o: float(o) if isinstance(o, (np.floating, np.integer)) else str(o))
     if "--markdown" in sys.argv:
-        open(os.path.join(_path.ROOT, "VALIDATION.md"), "w").write(to_markdown(rows))
+        with open(os.path.join(_path.ROOT, "VALIDATION.md"), "w", encoding="utf-8", newline="\n") as f:
+            f.write(to_markdown(rows))
         print("wrote VALIDATION.md")
     sys.exit(1 if n_fail else 0)

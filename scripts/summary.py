@@ -19,4 +19,5 @@ if __name__ == "__main__":
         print(f"  {k:16s} t = {b['t_h']:.2f} h, FE = {b['FE_avg']*100:.0f} %, "
               f"{b['kWh_per_kgN_nitrate']:+.1f} kWh/kg NO3-N, {b['kWh_per_kgN_total']:+.1f} kWh/kg N")
     os.makedirs(_path.OUTPUTS, exist_ok=True)
-    json.dump(N, open(os.path.join(_path.OUTPUTS, "results.json"), "w"), ensure_ascii=False, indent=1, default=float)
+    with open(os.path.join(_path.OUTPUTS, "results.json"), "w", encoding="utf-8") as f:
+        json.dump(N, f, ensure_ascii=False, indent=1, default=float)

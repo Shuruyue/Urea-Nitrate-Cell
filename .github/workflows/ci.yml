@@ -7,9 +7,12 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        # Windows 會抓到 Linux 看不到的編碼問題（非 UTF-8 的預設檔案／主控台編碼）
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.12"]
     steps:
       - uses: actions/checkout@v4
