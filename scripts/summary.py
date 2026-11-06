@@ -1,4 +1,4 @@
-"""印出主要結果並寫入 outputs/results.json。"""
+"""Print the main results and write outputs/results.json."""
 import json
 import os
 import _path  # noqa: F401
@@ -8,7 +8,7 @@ if __name__ == "__main__":
     N = compute()
     t, op, B = N["thermo"], N["op_10mA"], N["batch_60mgN_per_L"]
     print(f"E°cell = {t['Ecell_UOR_lit']:+.2f} / {t['Ecell_UOR_calc']:+.2f} / {t['Ecell_UOR_CO3']:+.2f} V"
-          f"（UOR E° = 0.37 / 0.072 / −0.025 V）")
+          f" (UOR E° = 0.37 / 0.072 / −0.025 V)")
     print("10 mA cm-2, 100 mM NO3-:")
     for k, r in op.items():
         print(f"  {k:9s} V_cell = {r['V']:+.2f} V  (E_a = {r['Ea']:.3f}, E_c = {r['Ec']:+.3f})")

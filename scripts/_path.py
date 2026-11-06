@@ -1,8 +1,9 @@
-"""讓 scripts/ 在未安裝套件時也能直接執行（把專案根目錄加入 sys.path），並統一以 UTF-8 輸出。"""
+"""Let scripts/ run without installing the package (adds the project root to sys.path); print in UTF-8."""
 import os
 import sys
 
-# 輸出被導向檔案或管線時，Windows 會用系統編碼（中文環境為 cp950），印不出 µ、− 等字元
+# When output is redirected to a file or pipe, Windows uses the locale encoding (cp950 on a
+# Traditional-Chinese system), which cannot encode characters such as µ and −
 for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8")

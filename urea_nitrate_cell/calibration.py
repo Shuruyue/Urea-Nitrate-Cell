@@ -1,13 +1,13 @@
 """
-用 Yao 2025 的 LSV 數據校正 S1 參數（最小平方法）
+Calibrate the S1 parameters against the Yao 2025 LSV data (least squares)
 ------------------------------------------------
-量測到的電位包含未補償的歐姆壓降 iR_u，所以模型寫成
-    陽極：j = j_UOR(E_meas − j R_u) + j_OER(E_meas − j R_u)
-    陰極：j = j_bg + j_HER(E_true) + j_NO3(E_true, C)，E_true = E_meas + j R_u
-其中 j_bg 為 LSV 的背景電流（電容充電等，只在擬合時使用，電池模型不含）。
-每個量測點用 brentq 解出模型電流，再以相對誤差 (j_model − j_data)/(j_data + 3) 做最小平方。
+The measured potential includes the uncompensated ohmic drop iR_u, so the model is written as
+    anode:   j = j_UOR(E_meas − j R_u) + j_OER(E_meas − j R_u)
+    cathode: j = j_bg + j_HER(E_true) + j_NO3(E_true, C),  E_true = E_meas + j R_u
+where j_bg is the LSV background current (capacitive charging etc.; used only in the fit, not in the cell model).
+For each data point the model current is solved with brentq; the fit minimizes the relative error (j_model − j_data)/(j_data + 3).
 
-輸出：擬合參數 ± 標準誤差、各曲線的 RMS 相對誤差（scripts/calibrate.py 會寫入 outputs/calibration_result.json）。
+Output: fitted parameters ± standard errors and the RMS relative error of each curve (scripts/calibrate.py writes outputs/calibration_result.json).
 """
 import numpy as np
 from scipy.optimize import least_squares, brentq
@@ -16,12 +16,12 @@ from .yao2025 import FIG3B, FIG11A_UOR, FIG11A_OER, REPORTED
 
 
 def _residual_variance(s):
-    """殘差變異數的不偏估計 SSR / (n − p)，用於共變異矩陣（除以 n 會低估標準誤差）。"""
+    """Unbiased residual variance SSR / (n − p) for the covariance matrix (dividing by n underestimates the standard errors)."""
     return np.sum(s.fun ** 2) / (s.fun.size - s.x.size)
 
 
 # ---------------------------------------------------------------------------
-# 陽極（Fig. 11a）
+# Anode (Fig. 11a)
 # ---------------------------------------------------------------------------
 def anode_meas(E, p, Ru, with_uor=True):
     q = dict(p, UOR_on=with_uor)
@@ -33,7 +33,7 @@ def anode_resid(p, Ru):
     r = []
     for (E, J), uor in ((FIG11A_UOR, True), (FIG11A_OER, False)):
         for e, jj in zip(E, J):
-            if jj >= (2.0 if uor else 5.0):      # OER 曲線 5 mA 以下為 Ni(OH)2 氧化前峰，不擬合
+            if jj >= (2.0 if uor else 5.0):      # below 5 mA the OER curve shows the Ni(OH)2 pre-oxidation peak; not fitted
                 r.append((anode_meas(e, p, Ru, uor) - jj) / (jj + 3))
     return np.array(r)
 
@@ -41,10 +41,10 @@ def anode_resid(p, Ru):
 def fit_anode():
     base = dict(m.S1)
     out = {}
-    # (A) 模型實際使用的參數（論文報告值 + OER b = 60 mV/dec），只擬合 R_u
+    # (A) parameters actually used by the model (reported values + OER b = 60 mV/dec); only R_u fitted
     s = least_squares(lambda x: anode_resid(base, x[0]), [1.0], bounds=([0], [5]))
     out["used"] = dict(Ru=s.x[0], rms=float(np.sqrt(np.mean(s.fun ** 2))))
-    # (B) 全部放開：E10_UOR, b_UOR, E10_OER, b_OER, R_u
+    # (B) all free: E10_UOR, b_UOR, E10_OER, b_OER, R_u
     def res(x):
         return anode_resid(dict(base, E10_UOR=x[0], b_UOR=x[1], E10_OER=x[2], b_OER=x[3]), x[4])
     s = least_squares(res, [1.33, 0.044, 1.51, 0.06, 1.0],
@@ -53,7 +53,7 @@ def fit_anode():
     out["free"] = dict(zip(["E10_UOR", "b_UOR", "E10_OER", "b_OER", "Ru"], s.x.tolist()))
     out["free_std"] = dict(zip(out["free"], np.sqrt(np.diag(cov)).tolist()))
     out["free"]["rms"] = float(np.sqrt(np.mean(s.fun ** 2)))
-    # (C) b_UOR 固定為論文值 44.2 mV/dec
+    # (C) b_UOR fixed at the reported 44.2 mV/dec
     def res_c(x):
         return anode_resid(dict(base, E10_UOR=x[0], E10_OER=x[1], b_OER=x[2]), x[3])
     s = least_squares(res_c, [1.33, 1.51, 0.06, 1.0], bounds=([1.2, 1.4, 0.03, 0], [1.45, 1.6, 0.25, 5]))
@@ -63,7 +63,7 @@ def fit_anode():
 
 
 # ---------------------------------------------------------------------------
-# 陰極（Fig. 3b，0 / 1 / 10 / 100 mM 用於擬合，50 mM 留作獨立檢驗）
+# Cathode (Fig. 3b: 0 / 1 / 10 / 100 mM used in the fit, 50 mM held out as an independent test)
 # ---------------------------------------------------------------------------
 CATH_KEYS = ["E10_HER", "b_HER", "E10_NO3", "b_NO3", "gamma", "delta_um", "Ru", "j_bg"]
 

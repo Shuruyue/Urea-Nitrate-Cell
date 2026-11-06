@@ -1,8 +1,10 @@
 """
-繪圖：極化曲線、操作模式地圖、電位階梯、法拉第效率、批次處理、敏感度、示意圖、參數校正。
-預設版面：寬 14 cm、300 dpi、白底、襯線字型（Liberation Serif／Times 系）、數學符號 STIX；
-刻度與圖例 9.5 pt、軸標題 10.5 pt（插入文件時以 14 cm 寬放置，圖中字級即實際字級）。
-每個函式的 (w, h) 只決定長寬比。輸出目錄：OUT（預設 docs/figures）。
+Figures: polarization curves, operating-mode map, potential ladder, Faradaic efficiency, batch
+treatment, sensitivity, schematic, calibration.
+Default layout: 14 cm wide, 300 dpi, white background, serif font (Liberation Serif / Times family),
+STIX math; tick and legend text 9.5 pt, axis titles 10.5 pt (placed 14 cm wide in a document, these
+are the printed sizes). The (w, h) of each function only sets the aspect ratio. Output directory:
+OUT (default docs/figures).
 """
 import os
 import numpy as np
@@ -35,7 +37,7 @@ XJ = r"Current density $j$ (" + J_UNIT + ")"
 
 
 def newfig(w, h, **kw):
-    """寬度固定 W_CM，(w, h) 決定長寬比。"""
+    """Width fixed at W_CM; (w, h) sets the aspect ratio."""
     wi = W_CM / 2.54
     return plt.figure(figsize=(wi, wi * h / w), **kw)
 
@@ -88,18 +90,18 @@ def fig_mode_map(w=860, h=560, j=10.0):
     fig = newfig(w, h)
     ax = fig.add_axes([0.105, 0.14, 0.86, 0.83])
     eU, eUc, eN, Rj = m.E0["UOR_lit"], m.E0["UOR_calc"], m.E0["NO3RR"], j * 1e-3 * m.S1["R_ohm"]
-    # 熱力學不可能區
+    # beyond the standard potentials (grey)
     ax.axhspan(eN, YT, color="#dddddd", lw=0, zorder=0)
     ax.axvspan(XL, eUc, color="#dddddd", lw=0, zorder=0)
-    # 自發區（兩種 E°UOR）
+    # spontaneous region (two values of E°UOR)
     ax.add_patch(Polygon([[eUc, eUc + Rj], [eUc, eN], [eN - Rj, eN]], closed=True, fc="#d6e6fb", lw=0, zorder=1))
     ax.add_patch(Polygon([[eU, eU + Rj], [eU, eN], [eN - Rj, eN]], closed=True, fc="#8fbcf0", lw=0, zorder=1))
-    # 副反應區（FE < 90 %）
+    # side-reaction region (FE < 90 %)
     X, Y = np.meshgrid(xs, ys)
     side = np.where((FEN < 0.9) | (FEU < 0.9), 1.0, 0.0)
     ax.contourf(X, Y, side, levels=[0.5, 1.5], colors="none", hatches=["////"], zorder=2)
     ax.contour(X, Y, side, levels=[0.5], colors=GRAY, linewidths=1.0, zorder=2)
-    # 等電壓線（完整模型）
+    # iso-voltage lines (full model)
     cs = ax.contour(X, Y, V, levels=[-1.5, -1.0, -0.5], colors=GRAY, linewidths=1.2,
                     linestyles=[(0, (3, 3))] * 3, zorder=3)
     ax.clabel(cs, fmt=lambda v: f"{v:+.1f} V".replace("-", "−"), fontsize=FS, inline_spacing=4,
@@ -326,7 +328,7 @@ def fig_calibration(w=800, h=470):
 
 
 def make_all():
-    """產生全部的圖，回傳檔名列表。"""
+    """Generate all figures; return the list of file names."""
     fig_ladder(790, 610)
     fig_schematic(900, 553)
     fig_calibration(800, 470)

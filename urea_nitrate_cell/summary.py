@@ -1,4 +1,4 @@
-"""主要結果：全部由模型重算，回傳一個 dict（scripts/summary.py 會印出並寫成 JSON）。"""
+"""Main results, all recomputed from the model; returns a dict (scripts/summary.py prints it and writes JSON)."""
 import numpy as np
 from . import model as m
 from . import calibration as cal
@@ -15,7 +15,7 @@ def compute():
         N["thermo"][f"dG_{k}"] = G
     N["thermo"]["dH_urea_electrolysis_kJ"] = -393.51 - (-317.65) - (-285.83)
     N["thermo"]["nernst_1000x_mV"] = float(m.nernst_shift(1e-3) * 1e3)
-    N["thermo"]["NiOOH_RHE"] = 0.49 + 0.828          # 0.49 V vs SHE（Anuratha 2022）→ vs RHE, pH 14
+    N["thermo"]["NiOOH_RHE"] = 0.49 + 0.828          # 0.49 V vs SHE (Anuratha 2022) → vs RHE, pH 14
     N["jlim"] = {f"{C:g}": m.j_lim_no3(C, m.S1["delta_um"]) for C in (1, 60 / 14.007, 10, 100)}
     op = {k: m.solve_cell(10.0, p) for k, p in list(m.SCEN.items()) + [("OER_only", m.OER_ONLY)]}
     N["op_10mA"] = op
@@ -42,7 +42,7 @@ def compute():
                                  FE_end=float(r["FE"][-1]), kWh_per_kgN_nitrate=r["kWh_per_kgN_no3"],
                                  kWh_per_kgN_total=r["kWh_per_kgN_all"])
     N["batch_60mgN_per_L"] = B
-    lam_OH, lam_NO3 = 198.0, 71.4                     # 極限莫耳導電度 S cm2 mol-1（CRC Handbook）
+    lam_OH, lam_NO3 = 198.0, 71.4                     # limiting molar conductivities, S cm2 mol-1 (CRC Handbook)
     N["AEM_nitrate_transference"] = {f"{c:g} mM": c * 1e-3 * lam_NO3 / (lam_OH + c * 1e-3 * lam_NO3)
                                      for c in (60 / 14.007, 20, 100)}
     N["yao2025"] = dict(reported=REPORTED, cell_voltage_fig14d=FIG14D_VCELL)

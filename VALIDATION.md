@@ -4,50 +4,50 @@
 
 | # | Category | Check | Model | Expected | Tolerance | Result | How it is checked |
 |---|---|---|---|---|---|---|---|
-| 1 | 計量 | UOR：CO(NH2)2 + 6OH- → N2 + 5H2O + CO2 + 6e- | — | — | — | PASS | 逐一計算 C、H、N、O 原子數與電荷，左右相減應為 0 |
-| 2 | 計量 | NO3RR：NO3- + 6H2O + 8e- → NH3 + 9OH- | — | — | — | PASS | 逐一計算 C、H、N、O 原子數與電荷，左右相減應為 0 |
-| 3 | 計量 | 總反應：4CO(NH2)2 + 3NO3- → 4N2 + 4CO2 + 3NH3 + 2H2O + 3OH- | — | — | — | PASS | 逐一計算 C、H、N、O 原子數與電荷，左右相減應為 0 |
-| 4 | 計量 | UOR（碳酸根）：CO(NH2)2 + 8OH- → N2 + 6H2O + CO3^2- + 6e- | — | — | — | PASS | 逐一計算 C、H、N、O 原子數與電荷，左右相減應為 0 |
-| 5 | 熱力學 | E°(NO3-/NH3) vs RHE | 0.7083 | 0.708 | 0.001 | PASS | ΔfG° 重算 vs 表列值 |
-| 6 | 熱力學 | E°(UOR, CO2) vs RHE | 0.07229 | 0.072 | 0.001 | PASS | 與 Protsenko 2023 的 0.072 V 比較 |
-| 7 | 熱力學 | E°(UOR, CO3^2-) vs RHE | -0.02461 | -0.024 | 0.002 | PASS | 與 Protsenko 2024 的 EMF 0.024 V（UOR+HER）比較 |
-| 8 | 熱力學 | ΔH°/6F（尿素電解） | 0.3627 | 0.37 | 0.01 | PASS | 檢驗「0.37 V 可能是焓基準」的推測；0.363 V；只是數值接近，未證實文獻來源 |
-| 9 | 熱力學 | E°cell（UOR = 0.37 V） | 0.338 | 0.338 | 0.001 | PASS | 0.708 − 0.37 |
-| 10 | 熱力學 | ΔG°（UOR = 0.37 V），kJ/mol NO3- | -260.9 | -260.9 | 0.5 | PASS | ΔG = −nFE，n = 8 |
-| 11 | 熱力學 | Nernst：NO3- 稀釋 1000 倍（mV） | -22.18 | -22.18 | 0.01 | PASS | (RT/8F) ln 1000 = 22.2 mV |
-| 12 | 動力學 | S1: j_UOR(E10) = 10 mA cm-2 | 10 | 10 | 1e-09 | PASS | Tafel 式的定義：E10 時電流必為 10 |
-| 13 | 動力學 | S1: j_NO3,k(E10) = 10 mA cm-2（C = C_ref） | 10 | 10 | 1e-09 | PASS | 同上 |
-| 14 | 動力學 | S2: j_UOR(E10) = 10 mA cm-2 | 10 | 10 | 1e-09 | PASS | Tafel 式的定義：E10 時電流必為 10 |
-| 15 | 動力學 | S2: j_NO3,k(E10) = 10 mA cm-2（C = C_ref） | 10 | 10 | 1e-09 | PASS | 同上 |
-| 16 | 動力學 | S3: j_UOR(E10) = 10 mA cm-2 | 10 | 10 | 1e-09 | PASS | Tafel 式的定義：E10 時電流必為 10 |
-| 17 | 動力學 | S3: j_NO3,k(E10) = 10 mA cm-2（C = C_ref） | 10 | 10 | 1e-09 | PASS | 同上 |
-| 18 | 動力學 | UOR 數值 Tafel 斜率（mV/dec） | 44.2 | 44.2 | 0.01 | PASS | 取兩點 E 與 log j 計算斜率，應等於輸入的 b |
-| 19 | 質傳 | j_lim(100 mM, 43 µm)（mA cm-2） | 341.4 | 341.4 | 1e-06 | PASS | 手算 nFDC/δ：8 × 96485 × 1.902e-5 × 1e-4 / 4.3e-3 |
-| 20 | 質傳 | j_lim 與濃度成正比（10 mM / 1 mM） | 10 | 10 | 1e-09 | PASS | 線性關係 |
-| 21 | 質傳 | K–L：極負電位時 j_NO3 → j_lim（20 mM） | 1 | 1 | 0.001 | PASS | 動力學極快時，電流由擴散決定 |
-| 22 | 質傳 | K–L：j ≪ j_lim 時 j_NO3 ≈ j_k（100 mM, 0.65 V） | 1 | 1 | 0.001 | PASS | 擴散極快時，電流由動力學決定 |
-| 23 | 數值 | 陽極電流平衡最大殘差（mA cm-2） | 4.063e-10 | 0 | 1e-08 | PASS | 代回方程式 j_UOR + j_OER − j |
-| 24 | 數值 | 陰極電流平衡最大殘差（mA cm-2） | 1.994e-10 | 0 | 1e-08 | PASS | 代回方程式 j_NO3 + j_HER − j |
-| 25 | 數值 | 電流增加時 E_a 單調上升、E_c 單調下降（4 組 × 80 點） | — | — | — | PASS | 極化曲線不可回折 |
-| 26 | 數值 | 0 ≤ FE ≤ 1、E_c ≤ E°(NO3RR)、V_cell < E°cell（全部點） | — | — | — | PASS | 物理上限 |
-| 27 | 數值 | S3 陽極電位：brentq vs 解析反函數（V） | 0.47 | 0.47 | 1e-06 | PASS | Tafel 式可直接反解：E = E° + b log10[(j/j0) + 1] |
-| 28 | 校正 | 陽極 LSV：模型參數重現 Fig. 11a（RMS 相對誤差） | 0.08499 | 0 | 0.1 | PASS | UOR + OER 兩條曲線、2–175 mA cm-2，只擬合 R_u；R_u = 1.19 Ω cm2 |
-| 29 | 校正 | 陽極 iR 校正後 E10(UOR)（V） | 1.332 | 1.335 | 0.01 | PASS | b 固定 44.2 mV/dec 擬合 vs 論文報告 1.335 V |
-| 30 | 校正 | UOR 與 OER 在 10 mA 的電位差（mV） | 180 | 180 | 5 | PASS | Fig. 11a 標註 180 mV |
-| 31 | 校正 | 陰極 LSV：0/1/10/100 mM 擬合 RMS | 0.1185 | 0 | 0.15 | PASS | 4 條曲線共 127 點、7 個參數 |
-| 32 | 校正 | 陰極 LSV：100 mM 曲線 RMS | 0.07197 | 0 | 0.1 | PASS | 模型主要使用的濃度 |
-| 33 | 檢驗 | 陰極 LSV：50 mM 曲線（未參與擬合）RMS | 0.2919 | 0 | 0.35 | PASS | 獨立預測；Yao 的 50 mM 曲線在 −0.85 ~ −1.0 V 高於 100 mM，與濃度單調性矛盾，屬原始數據問題 |
-| 34 | 校正 | 擬合 E10(NO3RR) 與模型採用值（V） | 0.03659 | 0.037 | 0.002 | PASS |  |
-| 35 | 校正 | 擬合 b(NO3RR) 與模型採用值（V/dec） | 0.09909 | 0.099 | 0.001 | PASS |  |
-| 36 | 校正 | 擬合 E10(HER) 與模型採用值（V） | -0.2018 | -0.202 | 0.002 | PASS |  |
-| 37 | 校正 | 擬合 δ 與模型採用值（µm） | 43.45 | 43 | 1 | PASS |  |
-| 38 | 校正 | 反應級數 γ（放開擬合） | 0.865 | 1 | 0.2733 | PASS | γ = 1 是否在 2 個標準誤差內；γ = 0.87 ± 0.14 |
-| 39 | 批次 | 質量守恆：去除的 NO3- × 8F = 用於 NO3RR 的電量 | 1 | 1 | 1e-09 | PASS | 兩邊獨立累加 |
-| 40 | 批次 | 濃度隨時間單調下降 | — | — | — | PASS |  |
-| 41 | 批次 | FE = 1 時的處理時間（h） | 0.8278 | 0.8266 | 0.002778 | PASS | 法拉第定律手算 t = nFΔCV / I |
-| 42 | 批次 | 時間步長 10 s vs 2 s：處理時間相對差 | 0.001225 | 0 | 0.005 | PASS | 收斂性 |
-| 43 | 批次 | 時間步長 10 s vs 2 s：能耗相對差 | 0.001257 | 0 | 0.005 | PASS | 收斂性 |
-| 44 | 批次 | 時間步長（跟隨策略）：能耗相對差 | 0.000179 | 0 | 0.005 | PASS | 收斂性 |
-| 45 | 批次 | S1 全程 V_cell < 0（耗電），能量為負 | — | — | — | PASS | 符號慣例：產電為正 |
-| 46 | 批次 | S3 於 10 mA cm-2 為正電壓（產電） | 1 | 1 | 0 | PASS |  |
-| 47 | 地圖 | 主反應區（兩極 FE ≥ 90 %）：直線 V = y − x − jR 與完整模型最大差（mV） | 4.112 | 0 | 5 | PASS | 576 個格點中 378 點位於主反應區；其餘 198 點副反應（HER 或 OER）佔 >10 % 電流，直線失效；因此地圖改用完整模型計算等電壓線，並標出副反應區 |
+| 1 | Stoichiometry | UOR: CO(NH2)2 + 6OH- → N2 + 5H2O + CO2 + 6e- | — | — | — | PASS | count C, H, N, O atoms and charge on each side; the difference must be 0 |
+| 2 | Stoichiometry | NO3RR: NO3- + 6H2O + 8e- → NH3 + 9OH- | — | — | — | PASS | count C, H, N, O atoms and charge on each side; the difference must be 0 |
+| 3 | Stoichiometry | Overall: 4CO(NH2)2 + 3NO3- → 4N2 + 4CO2 + 3NH3 + 2H2O + 3OH- | — | — | — | PASS | count C, H, N, O atoms and charge on each side; the difference must be 0 |
+| 4 | Stoichiometry | UOR (carbonate): CO(NH2)2 + 8OH- → N2 + 6H2O + CO3^2- + 6e- | — | — | — | PASS | count C, H, N, O atoms and charge on each side; the difference must be 0 |
+| 5 | Thermodynamics | E°(NO3-/NH3) vs RHE | 0.7083 | 0.708 | 0.001 | PASS | recomputed from ΔfG° vs tabulated value |
+| 6 | Thermodynamics | E°(UOR, CO2) vs RHE | 0.07229 | 0.072 | 0.001 | PASS | compared with 0.072 V from Protsenko 2023 |
+| 7 | Thermodynamics | E°(UOR, CO3^2-) vs RHE | -0.02461 | -0.024 | 0.002 | PASS | compared with the 0.024 V EMF (UOR + HER) of Protsenko 2024 |
+| 8 | Thermodynamics | ΔH°/6F (urea electrolysis) | 0.3627 | 0.37 | 0.01 | PASS | tests the guess that 0.37 V is an enthalpy-based value; 0.363 V; numerically close only, literature source not confirmed |
+| 9 | Thermodynamics | E°cell (UOR = 0.37 V) | 0.338 | 0.338 | 0.001 | PASS | 0.708 − 0.37 |
+| 10 | Thermodynamics | ΔG° (UOR = 0.37 V), kJ/mol NO3- | -260.9 | -260.9 | 0.5 | PASS | ΔG = −nFE, n = 8 |
+| 11 | Thermodynamics | Nernst: 1000x NO3- dilution (mV) | -22.18 | -22.18 | 0.01 | PASS | (RT/8F) ln 1000 = 22.2 mV |
+| 12 | Kinetics | S1: j_UOR(E10) = 10 mA cm-2 | 10 | 10 | 1e-09 | PASS | by construction of the Tafel expression the current at E10 is 10 |
+| 13 | Kinetics | S1: j_NO3,k(E10) = 10 mA cm-2 (C = C_ref) | 10 | 10 | 1e-09 | PASS | as above |
+| 14 | Kinetics | S2: j_UOR(E10) = 10 mA cm-2 | 10 | 10 | 1e-09 | PASS | by construction of the Tafel expression the current at E10 is 10 |
+| 15 | Kinetics | S2: j_NO3,k(E10) = 10 mA cm-2 (C = C_ref) | 10 | 10 | 1e-09 | PASS | as above |
+| 16 | Kinetics | S3: j_UOR(E10) = 10 mA cm-2 | 10 | 10 | 1e-09 | PASS | by construction of the Tafel expression the current at E10 is 10 |
+| 17 | Kinetics | S3: j_NO3,k(E10) = 10 mA cm-2 (C = C_ref) | 10 | 10 | 1e-09 | PASS | as above |
+| 18 | Kinetics | UOR numerical Tafel slope (mV/dec) | 44.2 | 44.2 | 0.01 | PASS | slope from two points of E vs log j; must equal the input b |
+| 19 | Mass transport | j_lim(100 mM, 43 µm) (mA cm-2) | 341.4 | 341.4 | 1e-06 | PASS | hand calculation nFDC/δ: 8 × 96485 × 1.902e-5 × 1e-4 / 4.3e-3 |
+| 20 | Mass transport | j_lim proportional to concentration (10 mM / 1 mM) | 10 | 10 | 1e-09 | PASS | linear relation |
+| 21 | Mass transport | K–L: j_NO3 → j_lim at very negative potential (20 mM) | 1 | 1 | 0.001 | PASS | with fast kinetics the current is set by diffusion |
+| 22 | Mass transport | K–L: j_NO3 ≈ j_k when j ≪ j_lim (100 mM, 0.65 V) | 1 | 1 | 0.001 | PASS | with fast diffusion the current is set by kinetics |
+| 23 | Numerics | max anode current-balance residual (mA cm-2) | 4.063e-10 | 0 | 1e-08 | PASS | substituted back: j_UOR + j_OER − j |
+| 24 | Numerics | max cathode current-balance residual (mA cm-2) | 1.994e-10 | 0 | 1e-08 | PASS | substituted back: j_NO3 + j_HER − j |
+| 25 | Numerics | E_a rises and E_c falls monotonically with current (4 sets × 80 points) | — | — | — | PASS | polarization curves must not fold back |
+| 26 | Numerics | 0 ≤ FE ≤ 1, E_c ≤ E°(NO3RR), V_cell < E°cell (all points) | — | — | — | PASS | physical bounds |
+| 27 | Numerics | S3 anode potential: brentq vs analytic inverse (V) | 0.47 | 0.47 | 1e-06 | PASS | the Tafel expression inverts directly: E = E° + b log10[(j/j0) + 1] |
+| 28 | Calibration | anode LSV: model parameters reproduce Fig. 11a (RMS relative error) | 0.08499 | 0 | 0.1 | PASS | UOR + OER curves, 2–175 mA cm-2, only R_u fitted; R_u = 1.19 Ω cm2 |
+| 29 | Calibration | anode E10(UOR) after iR correction (V) | 1.332 | 1.335 | 0.01 | PASS | fit with b fixed at 44.2 mV/dec vs the reported 1.335 V |
+| 30 | Calibration | UOR–OER potential gap at 10 mA (mV) | 180 | 180 | 5 | PASS | 180 mV marked in Fig. 11a |
+| 31 | Calibration | cathode LSV: fit RMS, 0/1/10/100 mM | 0.1185 | 0 | 0.15 | PASS | 4 curves, 127 points, 7 parameters |
+| 32 | Calibration | cathode LSV: 100 mM curve RMS | 0.07197 | 0 | 0.1 | PASS | the concentration mainly used by the model |
+| 33 | Held-out test | cathode LSV: 50 mM curve (not in the fit) RMS | 0.2919 | 0 | 0.35 | PASS | independent prediction; Yao's 50 mM curve lies above the 100 mM curve between −0.85 and −1.0 V, against the concentration trend: a source-data problem |
+| 34 | Calibration | fitted E10(NO3RR) vs value used (V) | 0.03659 | 0.037 | 0.002 | PASS |  |
+| 35 | Calibration | fitted b(NO3RR) vs value used (V/dec) | 0.09909 | 0.099 | 0.001 | PASS |  |
+| 36 | Calibration | fitted E10(HER) vs value used (V) | -0.2018 | -0.202 | 0.002 | PASS |  |
+| 37 | Calibration | fitted δ vs value used (µm) | 43.45 | 43 | 1 | PASS |  |
+| 38 | Calibration | reaction order γ (free fit) | 0.865 | 1 | 0.2733 | PASS | is γ = 1 within 2 standard errors; γ = 0.87 ± 0.14 |
+| 39 | Batch | mass balance: NO3- removed × 8F = charge used for NO3RR | 1 | 1 | 1e-09 | PASS | both sides accumulated independently |
+| 40 | Batch | concentration decreases monotonically with time | — | — | — | PASS |  |
+| 41 | Batch | treatment time at FE = 1 (h) | 0.8278 | 0.8266 | 0.002778 | PASS | Faraday's law by hand: t = nFΔCV / I |
+| 42 | Batch | time step 10 s vs 2 s: relative difference in treatment time | 0.001225 | 0 | 0.005 | PASS | convergence |
+| 43 | Batch | time step 10 s vs 2 s: relative difference in energy | 0.001257 | 0 | 0.005 | PASS | convergence |
+| 44 | Batch | time step (following strategy): relative difference in energy | 0.000179 | 0 | 0.005 | PASS | convergence |
+| 45 | Batch | S1: V_cell < 0 throughout (consumes power), energy negative | — | — | — | PASS | sign convention: power produced is positive |
+| 46 | Batch | S3 has a positive voltage at 10 mA cm-2 (produces power) | 1 | 1 | 0 | PASS |  |
+| 47 | Map | main-reaction region (FE ≥ 90 % at both electrodes): max difference, line V = y − x − jR vs full model (mV) | 4.112 | 0 | 5 | PASS | 378 of 576 grid points lie in the main-reaction region; in the other 198 points a side reaction (HER or OER) carries >10 % of the current and the line fails; the map therefore uses the full model for the iso-voltage lines and marks the side-reaction region |

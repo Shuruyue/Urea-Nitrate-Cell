@@ -1,5 +1,5 @@
-"""執行 47 項自動檢查：印出 PASS/FAIL、寫入 outputs/validation_table.json；
-加 --markdown 時另寫 VALIDATION.md。有任何失敗時 exit code = 1。"""
+"""Run the 47 automated checks: print PASS/FAIL and write outputs/validation_table.json;
+with --markdown also write VALIDATION.md. Exit code 1 if any check fails."""
 import json
 import os
 import sys
@@ -16,7 +16,7 @@ def to_markdown(rows):
            "| # | Category | Check | Model | Expected | Tolerance | Result | How it is checked |",
            "|---|---|---|---|---|---|---|---|"]
     for i, r in enumerate(rows, 1):
-        note = f"；{r['note']}" if r["note"] else ""
+        note = f"; {r['note']}" if r["note"] else ""
         out.append(f"| {i} | {r['cat']} | {r['name']} | {fmt(r['value'])} | {fmt(r['expect'])} | {fmt(r['tol'])} | "
                    f"{'PASS' if r['ok'] else '**FAIL**'} | {r['how']}{note} |")
     return "\n".join(out) + "\n"
@@ -25,7 +25,7 @@ def to_markdown(rows):
 if __name__ == "__main__":
     rows = run_all(verbose=True)
     n_fail = sum(not r["ok"] for r in rows)
-    print(f"\n共 {len(rows)} 項，失敗 {n_fail} 項")
+    print(f"\n{len(rows)} checks, {n_fail} failed")
     os.makedirs(_path.OUTPUTS, exist_ok=True)
     with open(os.path.join(_path.OUTPUTS, "validation_table.json"), "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=1,

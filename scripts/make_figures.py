@@ -1,4 +1,4 @@
-"""產生全部的圖到 docs/figures/（或第一個參數指定的目錄）。"""
+"""Generate all figures into docs/figures/ (or the directory given as the first argument)."""
 import os
 import sys
 import _path  # noqa: F401
