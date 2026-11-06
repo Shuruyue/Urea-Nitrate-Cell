@@ -63,7 +63,7 @@ python scripts/validate.py --markdown   # 47 checks → outputs/validation_table
 
 ## Project Structure
 
-```
+```text
 Urea-Nitrate-Cell/
 ├── urea_nitrate_cell/
 │   ├── model.py         # thermodynamics, kinetics, full-cell solver, sensitivity, batch simulation
@@ -91,6 +91,10 @@ $$\mathrm{4CO(NH_2)_2 + 3NO_3^- \rightarrow 4N_2 + 4CO_2 + 3NH_3 + 2H_2O + 3OH^-
 
 With E°(NO₃⁻/NH₃) = 0.71 V and E°(UOR) = 0.37 V (commonly cited), 0.072 V (from ΔfG°, CO₂ product) or −0.025 V (CO₃²⁻ product), the standard cell potential is **+0.34, +0.64 or +0.73 V** and ΔG° = −261, −491 or −566 kJ per mol NO₃⁻: the overall reaction is spontaneous.
 
+![Cell schematic](docs/figures/f_schematic.png)
+
+*Cell layout: urea is oxidized at a Ni-based anode, nitrate is reduced to ammonia at the cathode, and OH⁻ produced at the cathode crosses the anion-exchange membrane. Electrons flow through the external circuit from anode to cathode; whether it acts as a load or a supply depends on the sign of V_cell.*
+
 ### Full-cell model
 
 $$V_\mathrm{cell}(j) = E_\mathrm{c}(j) - E_\mathrm{a}(j) - jR_\Omega$$
@@ -112,6 +116,8 @@ Explicit Euler with a 10 s step; reducing the step to 2 s changes treatment time
 The measured LSV potential contains an uncompensated ohmic drop, so the fit uses $E_\mathrm{true} = E_\mathrm{meas} \mp jR_\mathrm{u}$ (− anode, + cathode). The cathode is fitted to the 0, 1, 10 and 100 mM curves (127 points); the 50 mM curve is held out.
 
 ![Calibration](docs/figures/f_calibration.png)
+
+*Symbols: data digitized from Yao et al. (2025); lines: model with the fitted S1 parameters. (a) anode LSV with and without urea; (b) cathode LSV at 0–100 mM nitrate. The 50 mM curve (open symbols, dashed line) is not used in the fit and serves as the held-out test.*
 
 ## Parameters
 
@@ -143,9 +149,33 @@ At 10 mA cm⁻² and 100 mM nitrate:
 - Only the assumed S3 delivers power: 1.6 mW cm⁻² at 23 mA cm⁻².
 - In a 60 mg N L⁻¹ batch, a concentration-following current raises the average Faradaic efficiency from 46 % to 74 % and cuts energy use by 41 %, at the cost of 46 % longer treatment.
 
+![Potential ladder](docs/figures/f_ladder.png)
+
+*Standard potentials (left) and electrode potentials of the fitted ANP catalyst at 10 mA cm⁻² (right). The 1.30 V shown is the gap between the two electrodes; adding the ohmic drop jR_Ω = 0.01 V gives the 1.31 V cell bias quoted above.*
+
 ![Polarization curves](docs/figures/f_polarization.png)
 
+*Cell voltage versus current density at 100 mM nitrate for the three catalyst scenarios and for the OER-anode control. Above the dashed line the cell delivers power.*
+
 ![Operating-mode map](docs/figures/f_mode_map.png)
+
+*Cell voltage at 10 mA cm⁻² over the plane of anode and cathode E₁₀, computed with the full model. Dark blue: spontaneous region for E°(UOR) = 0.37 V; light blue: the additional region for E°(UOR) = 0.072 V. Hatched: HER or OER carries more than 10 % of the current. Grey: E₁₀ beyond the NO₃RR standard potential, or anode E₁₀ below the CO₂-product UOR potential (with carbonate as the product, E° = −0.025 V, this left limit would sit 0.1 V lower; no scenario comes close).*
+
+### Dilute nitrate and batch treatment
+
+![Faradaic efficiency versus current](docs/figures/f_fe_conc.png)
+
+*NO₃RR Faradaic efficiency of the S1 cathode at three nitrate concentrations. As j approaches j_lim, HER takes over: at 4.3 mM (60 mg N L⁻¹), j_lim = 14.6 mA cm⁻² and the efficiency at 10 mA cm⁻² is already down to 87 %.*
+
+![Batch treatment](docs/figures/f_batch.png)
+
+*Batch treatment of 0.1 L at 60 mg N L⁻¹ on a 10 cm² electrode (S1) until 90 % of the nitrate is removed: constant 10 mA cm⁻² versus a current that follows 0.8 j_lim as the concentration falls.*
+
+### Sensitivity
+
+![Sensitivity](docs/figures/f_sensitivity.png)
+
+*Change in V_cell when one parameter at a time is moved to its low or high value; base case S1 at 20 mA cm⁻² and 100 mM nitrate (V_cell = −1.36 V). UOR E° and HER E₁₀ have no effect here: the kinetics are anchored at E₁₀, and HER carries no current at 100 mM. The reaction order γ is not shown because (C/C_ref)^γ = 1 at the base concentration.*
 
 ## Validation
 
@@ -164,7 +194,7 @@ Calibration is not independent validation: the S1 parameters are fitted to the s
 
 ## Limitations
 
-S1 is fitted to a single study; S2, S3 and R_Ω are assumptions. The model uses single Tafel slopes, a fixed diffusion layer and HER kinetics unaffected by nitrate, and does not include by-products (nitrite, over-oxidation of urea), pH drift or membrane potentials. Urea is assumed to be in excess at the anode (no urea mass-transport limit), so the batch simulation tracks only the nitrate concentration.
+S1 is fitted to a single study; S2, S3 and R_Ω are assumptions. The model uses single Tafel slopes, a fixed diffusion layer and HER kinetics unaffected by nitrate, and does not include by-products (nitrite, over-oxidation of urea), pH drift or membrane potentials. Urea is assumed to be in excess at the anode (no urea mass-transport limit), so the batch simulation tracks only the nitrate concentration. Only the urea nitrogen leaves as N₂: nitrate is converted to ammonia, which still has to be recovered (for example by stripping), so the "kWh per kg N" figures count nitrate nitrogen converted to NH₃ as treated, not as removed.
 
 ## References
 
