@@ -4,6 +4,10 @@
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
+**[Interactive page](https://shuruyue.github.io/Urea-Nitrate-Cell/web/cell-explorer.html)**: move the catalyst and operating parameters and the cell is solved again in the browser, with polarization curves, Faradaic efficiencies, the fit to the published LSV curves and a batch treatment run. With today's catalyst the cell still needs 1.31 V of external bias at 10 mA cm⁻²; urea saves 0.18 V compared with an oxygen-evolving anode, and only an assumed ideal catalyst makes the cell self-powered.
+
+[![The interactive page: cell voltage, power, electrode potentials and Faradaic efficiency](web/cell-explorer.png)](https://shuruyue.github.io/Urea-Nitrate-Cell/web/cell-explorer.html)
+
 ## Urea–Nitrate Direct Cell Model
 
 A thermodynamics, kinetics and mass-transport model of a direct electrochemical cell in which **urea is oxidized at the anode (UOR)** and **nitrate is reduced to ammonia at the cathode (NO₃RR)**. Urea acts as the fuel and nitrate as the oxidant, so two nitrogen pollutants are treated in one cell. The model asks how good the catalysts must be for the cell to run without external power, and how dilute nitrate limits real operation.
@@ -56,6 +60,7 @@ print(batch["FE_avg"], batch["t_end"])    # 0.742  2.65 h
 
 ```bash
 pytest -q                               # unit tests + full validation suite
+python scripts/verify_web_page.py       # JavaScript model of the interactive page vs the package (needs Node.js)
 python scripts/validate.py --markdown   # 47 checks → outputs/validation_table.json and VALIDATION.md
 ```
 
@@ -72,7 +77,8 @@ Urea-Nitrate-Cell/
 │   ├── validation.py    # 47 automated checks (run_all)
 │   ├── summary.py       # main results (compute)
 │   └── plotting.py      # figures (14 cm wide, 300 dpi)
-├── scripts/             # command-line entry points
+├── scripts/             # command-line entry points; build_web_page.py writes the page's data block
+├── web/                 # interactive page (GitHub Pages), checked by scripts/verify_web_page.py
 ├── tests/               # pytest: unit tests and full validation
 ├── docs/figures/        # generated figures
 ├── VALIDATION.md        # check-by-check validation table

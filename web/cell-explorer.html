@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urea–Nitrate Cell Explorer</title>
+<meta name="description" content="Interactive model of a urea–nitrate direct cell (urea oxidation at the anode, nitrate reduction to ammonia at the cathode): polarization, Faradaic efficiency, comparison with published LSV data and batch nitrate removal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* House style shared by the interactive pages (taken from the Ethanol-Water-VLE page of the same author). */
+:root {
+  --page: #f2f2ee; --surface: #fcfcfb; --surface-2: #f6f6f2; --ink: #141412; --ink-2: #52514e; --muted: #7d7b75;
+  --grid: #e5e4de; --axis: #c3c2b7; --line: rgba(11,11,11,.11);
+  --accent: #2a78d6; --accent-ink: #1c5cab; --accent-soft: #e3eefb;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --ideal: #8a8880; --exp: #141412;
+  --q1: #86b6ef; --q2: #3987e5; --q3: #1c5cab; --q4: #0d366b;
+  --warn-bg: #fff3d6; --warn-ink: #6b4300; --warn-mark: #fab219; --good: #006300; --crit: #d03b3b;
+  --font-ui: "IBM Plex Sans", "Noto Sans TC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0f0f0e; --surface: #1a1a19; --surface-2: #222220; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #8f8d86;
+    --grid: #2c2c2a; --axis: #45443f; --line: rgba(255,255,255,.10);
+    --accent: #3987e5; --accent-ink: #86b6ef; --accent-soft: #16273d;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ideal: #8f8d86; --exp: #f0efec;
+    --q1: #256abf; --q2: #3987e5; --q3: #6da7ec; --q4: #b7d3f6;
+    --warn-bg: #33270c; --warn-ink: #f5cf7a; --warn-mark: #fab219; --good: #0ca30c; --crit: #e66767;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0f0f0e; --surface: #1a1a19; --surface-2: #222220; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #8f8d86;
+  --grid: #2c2c2a; --axis: #45443f; --line: rgba(255,255,255,.10);
+  --accent: #3987e5; --accent-ink: #86b6ef; --accent-soft: #16273d;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ideal: #8f8d86; --exp: #f0efec;
+  --q1: #256abf; --q2: #3987e5; --q3: #6da7ec; --q4: #b7d3f6;
+  --warn-bg: #33270c; --warn-ink: #f5cf7a; --warn-mark: #fab219; --good: #0ca30c; --crit: #e66767;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--page); color: var(--ink); font-family: var(--font-ui); font-size: 14px; line-height: 1.5; }
+.app { max-width: 1320px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+sub, sup { font-size: 72%; line-height: 0; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* header */
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+.head h1 { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.01em; }
+.head h1 .en { display: block; font-size: .8rem; font-weight: 500; color: var(--muted); letter-spacing: .03em; margin-bottom: 2px; }
+.head .sys { color: var(--ink-2); font-size: .86rem; max-width: 62ch; }
+.head .sys b { font-weight: 600; color: var(--ink); }
+
+/* readouts */
+.readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.ro { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px 11px; min-width: 0; }
+.ro .k { font-size: .76rem; color: var(--muted); letter-spacing: .02em; }
+.ro .v { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 1.22rem; font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ro .v small { font-size: .74rem; color: var(--ink-2); font-weight: 400; }
+.ro .s { font-size: .78rem; color: var(--ink-2); margin-top: 2px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.pill.good::before { background: var(--good); }
+.pill.bad::before { background: var(--crit); }
+.pill.warn::before { background: var(--warn-mark); }
+
+.alert { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-bg); color: var(--warn-ink); border-radius: var(--r); padding: 9px 12px; margin-bottom: 14px; font-size: .86rem; }
+.alert::before { content: "!"; flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--warn-mark); color: #3a2600; font-weight: 700; font-size: 12px; display: grid; place-items: center; margin-top: 1px; }
+
+/* main layout */
+.layout { display: grid; grid-template-columns: 296px minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 920px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* control rail */
+.rail { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 14px 16px; display: grid; gap: 16px;
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow-y: auto; }
+@media (max-width: 920px) { .rail { position: static; max-height: none; } }
+.grp { display: grid; gap: 10px; }
+.grp > h2 { font-size: .78rem; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+.presets { display: grid; gap: 6px; }
+.preset { text-align: left; font: inherit; font-size: .84rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; cursor: pointer; display: grid; gap: 1px; }
+.preset small { color: var(--muted); font-size: .74rem; }
+.preset:hover { border-color: var(--accent); }
+.preset[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 3px; }
+.seg button { font: inherit; font-size: .78rem; border: 0; background: transparent; color: var(--ink-2); padding: 5px 6px; border-radius: 6px; cursor: pointer; line-height: 1.25; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); font-weight: 500; }
+.ctl { display: grid; gap: 3px; }
+.ctl .row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ctl label { font-size: .86rem; }
+.ctl label .u { color: var(--muted); font-size: .76rem; margin-left: 4px; }
+.ctl input[type=number] { width: 106px; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: .84rem; text-align: right; color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+.ctl input[type=range] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font: inherit; font-size: .74rem; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); border-radius: 999px; padding: 1px 9px; cursor: pointer; }
+.chip:hover { border-color: var(--accent); color: var(--ink); }
+.derived { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 3px 10px; font-size: .8rem; color: var(--ink-2); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.derived .num { color: var(--ink); text-align: right; }
+.checks { display: grid; gap: 6px; font-size: .86rem; }
+.checks label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.checks input { accent-color: var(--accent); width: 15px; height: 15px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* tabs */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 14px; overflow-x: auto; }
+.tab { font: inherit; font-size: .9rem; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--ink-2); padding: 8px 12px 9px; cursor: pointer; white-space: nowrap; margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 500; }
+.panel { display: grid; gap: 14px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+
+/* chart cards */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 12px 8px; min-width: 0; }
+.card > h3 { font-size: .92rem; font-weight: 600; }
+.card > .sub { font-size: .78rem; color: var(--muted); margin-top: 1px; }
+.chart { margin-top: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 3px 14px; font-size: .78rem; color: var(--ink-2); margin-bottom: 4px; }
+.legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { flex: none; }
+.plotbox { position: relative; width: 100%; outline: none; }
+.plotbox:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.plotbox svg { display: block; touch-action: pan-y; }
+.plotbox text { font-family: var(--font-num); font-size: 10.5px; fill: var(--muted); }
+.plotbox text.lab { font-family: var(--font-ui); font-size: 11.5px; fill: var(--ink-2); }
+.plotbox text.ann { font-family: var(--font-ui); font-size: 11px; fill: var(--ink-2); }
+.tip { position: absolute; z-index: 3; pointer-events: none; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(0,0,0,.12);
+  border-radius: 8px; padding: 6px 9px 7px; font-size: .78rem; min-width: 150px; max-width: 250px; }
+.tip .t { color: var(--muted); font-family: var(--font-num); font-size: .74rem; margin-bottom: 3px; }
+.tip .r { display: grid; grid-template-columns: 16px auto 1fr; align-items: center; gap: 6px; line-height: 1.35; }
+.tip .r b { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 500; color: var(--ink); }
+.tip .r i { font-style: normal; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note { font-size: .82rem; color: var(--ink-2); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.answer { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--r); padding: 10px 14px; font-size: .9rem; max-width: 100%; }
+.answer p { margin: 0; max-width: 78ch; }
+.answer p + p { margin-top: 6px; }
+
+table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+th, td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--muted); font-size: .76rem; }
+td { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+td.txt { font-family: var(--font-ui); }
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 4px 2px; }
+.btn { font: inherit; font-size: .86rem; border: 1px solid var(--accent); color: var(--accent-ink); background: var(--accent-soft); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.btn:hover { background: var(--surface); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.toolbar .msg { font-size: .8rem; color: var(--muted); }
+textarea.copybox { width: 100%; height: 140px; font-family: var(--font-num); font-size: .74rem; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.src { font-size: .8rem; color: var(--ink-2); display: grid; gap: 4px; }
+.src p { margin: 0; max-width: 100ch; }
+.foot { margin-top: 22px; font-size: .76rem; color: var(--muted); max-width: 100ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+
+/* ---------------------------------------------------------------- page-specific */
+:root { --s4: #8a5cd1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --s4: #a07de0; } }
+:root[data-theme="dark"] { --s4: #a07de0; }
+body { margin: 0; }
+a { color: var(--accent-ink); }
+.head .links { font-size: .82rem; color: var(--ink-2); display: flex; gap: 14px; flex-wrap: wrap; }
+.formula { font-family: var(--font-num); font-size: .84rem; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; margin: 4px 0; overflow-x: auto; white-space: nowrap; }
+.ro .v.pos { color: var(--good); }
+.ro .v.neg { color: var(--crit); }
+</style>
+
+<div class="app">
+  <header class="head">
+    <h1><span class="en">Urea-Nitrate-Cell · urea oxidation ‖ nitrate reduction · pH 14, 25 °C</span>Can a urea–nitrate cell clean water and make power?</h1>
+    <p class="sys">Urea is oxidized at the anode and nitrate reduced to ammonia at the cathode. Move the catalyst and operating parameters on the left and the cell is solved again in the browser with the model of <b>urea_nitrate_cell</b>: both electrode potentials from current balances, Faradaic efficiencies, a comparison with the published LSV data, and a batch treatment run. Potentials are V vs RHE.</p>
+    <p class="links"><a href="https://github.com/Shuruyue/Urea-Nitrate-Cell">Repository</a><a href="https://github.com/Shuruyue/Urea-Nitrate-Cell/blob/main/VALIDATION.md">47 validation checks</a></p>
+  </header>
+
+  <section class="readouts" aria-label="Results at the operating point" id="readouts"></section>
+  <div class="alert" id="alert" hidden></div>
+
+  <div class="layout">
+    <aside class="rail" aria-label="Parameters">
+      <div class="grp"><h2>Catalyst scenario</h2><div class="presets" id="presets"></div></div>
+      <div class="grp" id="opGrp"><h2>Operating point</h2></div>
+      <div class="grp" id="anGrp"><h2>Anode · urea oxidation and OER</h2>
+        <div class="ctl" id="e0ctl">
+          <div class="row"><span style="font-size:.86rem">Standard potential of urea oxidation</span></div>
+          <div class="seg" id="segE0" role="group" aria-label="Urea oxidation standard potential" style="grid-template-columns: 1fr 1fr 1fr"></div>
+        </div>
+        <div class="checks"><label><input type="checkbox" id="cUor"><span>Urea present at the anode</span></label></div>
+      </div>
+      <div class="grp" id="caGrp"><h2>Cathode · nitrate reduction and HER</h2></div>
+      <div class="grp" id="cellGrp"><h2>Cell</h2></div>
+      <div class="grp">
+        <h2>Show</h2>
+        <div class="checks"><label><input type="checkbox" id="cRef" checked><span>Reference scenarios S1–S3 and the OER control</span></label></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="tabs" role="tablist" aria-label="Views">
+        <button class="tab" role="tab" id="t-cell" aria-controls="p-cell" aria-selected="true">Full cell</button>
+        <button class="tab" role="tab" id="t-data" aria-controls="p-data" aria-selected="false">Electrodes against the data</button>
+        <button class="tab" role="tab" id="t-batch" aria-controls="p-batch" aria-selected="false">Batch treatment</button>
+        <button class="tab" role="tab" id="t-model" aria-controls="p-model" aria-selected="false">Model and checks</button>
+      </div>
+
+      <section class="panel" id="p-cell" role="tabpanel" aria-labelledby="t-cell">
+        <div class="answer" id="answer"></div>
+        <div class="grid2">
+          <div class="card"><h3>Cell voltage</h3><div class="sub">V<sub>cell</sub> = E<sub>c</sub> − E<sub>a</sub> − jR<sub>Ω</sub>; above zero the cell delivers power, below it needs an external bias</div><div class="chart" id="cV"></div></div>
+          <div class="card"><h3>Power</h3><div class="sub">V<sub>cell</sub> · j: positive is delivered, negative is required</div><div class="chart" id="cP"></div></div>
+        </div>
+        <div class="grid2">
+          <div class="card"><h3>Electrode potentials</h3><div class="sub">Each solved from its current balance; dashed: standard potentials</div><div class="chart" id="cE"></div></div>
+          <div class="card"><h3>Faradaic efficiency</h3><div class="sub">Share of the current carried by the wanted reaction; the rest goes to OER (anode) or HER (cathode)</div><div class="chart" id="cFE"></div></div>
+        </div>
+      </section>
+
+      <section class="panel" id="p-data" role="tabpanel" aria-labelledby="t-data" hidden>
+        <div class="answer" id="answerData"></div>
+        <div class="grid2">
+          <div class="card"><h3>Cathode LSV, Yao et al. (2025) Fig. 3b</h3><div class="sub" id="cathSub"></div><div class="chart" id="cCath"></div></div>
+          <div class="card"><h3>Anode LSV, Yao et al. (2025) Fig. 11a</h3><div class="sub" id="anSub"></div><div class="chart" id="cAn"></div></div>
+        </div>
+        <div class="tablewrap"><table id="rmsTable"></table></div>
+      </section>
+
+      <section class="panel" id="p-batch" role="tabpanel" aria-labelledby="t-batch" hidden>
+        <div class="answer" id="answerBatch"></div>
+        <div class="grid2">
+          <div class="card"><h3>Nitrate left in the cathode chamber</h3><div class="sub" id="batchSub"></div><div class="chart" id="cBatchC"></div></div>
+          <div class="card"><h3>Nitrate Faradaic efficiency during the run</h3><div class="sub">As the nitrate runs out, HER takes over unless the current follows</div><div class="chart" id="cBatchFE"></div></div>
+        </div>
+        <div class="tablewrap"><table id="batchTable"></table></div>
+      </section>
+
+      <section class="panel" id="p-model" role="tabpanel" aria-labelledby="t-model" hidden>
+        <div class="card src">
+          <h3>Model</h3>
+          <div class="formula">kinetics: j = 10 (10<sup>η/b</sup> − 1) / (10<sup>η₁₀/b</sup> − 1) mA cm⁻², anchored at the potential E₁₀ where j = 10 mA cm⁻²</div>
+          <div class="formula">nitrate: j<sub>NO₃</sub> = j<sub>k</sub> j<sub>lim</sub> / (j<sub>k</sub> + j<sub>lim</sub>), &nbsp; j<sub>k</sub> ∝ (C/100 mM)<sup>γ</sup>, &nbsp; j<sub>lim</sub> = 8FDC/δ (Koutecký–Levich)</div>
+          <div class="formula">full cell: j<sub>UOR</sub>(E<sub>a</sub>) + j<sub>OER</sub>(E<sub>a</sub>) = j, &nbsp; j<sub>NO₃</sub>(E<sub>c</sub>) + j<sub>HER</sub>(E<sub>c</sub>) = j, &nbsp; V<sub>cell</sub> = E<sub>c</sub> − E<sub>a</sub> − jR<sub>Ω</sub></div>
+          <div class="formula">batch: dC/dt = −FE<sub>NO₃</sub> I / (8 F V), explicit Euler with 10 s steps until 90 % is removed</div>
+          <p>Against the data, the electrode potential seen by the potentiostat includes the uncompensated resistance R<sub>u</sub> (and a background current at the cathode), both fitted in <code>calibration.py</code>; the curves on the data tab use those fitted values with the parameters on the left.</p>
+        </div>
+        <div class="card"><h3>Parameters now and in the fitted scenario S1</h3><div class="tablewrap" style="border:0;padding:0;margin-top:8px"><table id="paramTable"></table></div></div>
+        <div class="card src">
+          <h3>Checks</h3>
+          <p>The JavaScript model of this page is a line-by-line copy of <code>urea_nitrate_cell/model.py</code> and of the measured-curve functions of <code>calibration.py</code>. <code>scripts/verify_web_page.py</code> runs it in Node.js for random parameter sets and compares cell voltages, electrode potentials, Faradaic efficiencies, limiting currents, measured LSV currents and whole batch runs with the Python package; the test (part of the pytest suite) passes only if they agree to a relative 10⁻⁸. The model itself is checked by the 47 validation checks of the repository.</p>
+          <p>Calibration is not independent validation: S1 is fitted to the same LSV curves, and no full-cell data exist yet to test the absolute cell voltage. S2, S3 and R<sub>Ω</sub> are assumptions.</p>
+        </div>
+        <div class="card src">
+          <h3>Limitations and sources</h3>
+          <p>Single Tafel slopes, a fixed diffusion layer, HER kinetics unaffected by nitrate; no by-products (nitrite, urea over-oxidation), pH drift or membrane potentials; urea is taken to be in excess at the anode.</p>
+          <p><b>Data:</b> LSV curves digitized from M. Yao et al., <i>Sustainability</i> 17, 3835 (2025), CC BY 4.0. <b>Thermodynamics:</b> NBS tables (Wagman et al., 1982). <b>Nitrate diffusion coefficient:</b> CRC Handbook of Chemistry and Physics.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <p class="foot">Code: <a href="https://github.com/Shuruyue/Urea-Nitrate-Cell">github.com/Shuruyue/Urea-Nitrate-Cell</a>. The data block of this page is written by <code>scripts/build_web_page.py</code> from the package. Style shared with the <a href="https://shuruyue.github.io/Ethanol-Water-VLE/web/ethanol-water-vle.html">ethanol–water page</a>.</p>
+</div>
+
+<script>
+"use strict";
+window.addEventListener("error", (e) => { const a = document.getElementById("alert"); a.hidden = false; a.textContent = "This page hit an error: " + e.message; });
+/* ---- data: begin (written by scripts/build_web_page.py) */
+const DATA = {"scenarios":{"S1":{"E0_UOR":0.37,"E10_UOR":1.335,"b_UOR":0.0442,"E10_OER":1.515,"b_OER":0.06,"E10_NO3":0.037,"b_NO3":0.099,"gamma":1.0,"C_ref":100.0,"E10_HER":-0.202,"b_HER":0.081,"delta_um":43.0,"C_NO3":100.0,"R_ohm":1.0},"S2":{"E0_UOR":0.37,"E10_UOR":0.6,"b_UOR":0.04,"E10_OER":1.515,"b_OER":0.06,"E10_NO3":0.3,"b_NO3":0.06,"gamma":1.0,"C_ref":100.0,"E10_HER":-0.202,"b_HER":0.081,"delta_um":43.0,"C_NO3":100.0,"R_ohm":1.0},"S3":{"E0_UOR":0.37,"E10_UOR":0.47,"b_UOR":0.04,"E10_OER":1.515,"b_OER":0.06,"E10_NO3":0.6,"b_NO3":0.06,"gamma":1.0,"C_ref":100.0,"E10_HER":-0.202,"b_HER":0.081,"delta_um":43.0,"C_NO3":100.0,"R_ohm":1.0},"OER":{"E0_UOR":0.37,"E10_UOR":1.335,"b_UOR":0.0442,"E10_OER":1.515,"b_OER":0.06,"E10_NO3":0.037,"b_NO3":0.099,"gamma":1.0,"C_ref":100.0,"E10_HER":-0.202,"b_HER":0.081,"delta_um":43.0,"C_NO3":100.0,"R_ohm":1.0,"UOR_on":false}},"labels":{"S1":"S1 current catalyst (Yao 2025)","S2":"S2 improved (assumed)","S3":"S3 ideal (assumed)","OER":"Control: S1 with an OER-only anode"},"E0":{"HER":0.0,"UOR_lit":0.37,"UOR_calc":0.072,"UOR_CO3":-0.025,"NO3RR":0.708,"OER":1.229},"batch":{"V_L":0.1,"A_cm2":10.0,"C0":4.283572499464554,"dt":10.0,"removal":0.9},"yao":{"cathode":{"0":[[-0.261,18.8],[-0.251,16.6],[-0.241,14.3],[-0.231,12.4],[-0.221,10.7],[-0.211,9.3],[-0.201,8.1],[-0.191,6.9],[-0.181,6.1],[-0.171,5.3],[-0.161,4.7],[-0.151,4.2],[-0.141,3.9],[-0.131,3.6],[-0.121,3.3],[-0.111,3.0],[-0.101,2.8],[-0.091,2.8],[-0.081,2.7],[-0.071,2.7],[-0.061,2.5],[-0.051,2.5],[-0.041,2.5],[-0.031,2.5],[-0.021,2.5],[-0.011,2.5],[-0.001,2.5],[0.009,2.5],[0.019,2.2],[0.029,2.2],[0.039,2.2],[0.049,1.9],[0.059,1.9],[0.069,1.6],[0.079,1.6],[0.089,1.4],[0.099,1.3],[0.109,1.3],[0.119,1.1],[0.129,1.1],[0.139,0.8],[0.149,0.8],[0.159,0.8],[0.169,0.5],[0.179,0.5],[0.189,0.3],[0.199,0.2],[0.209,-0.1],[0.219,-0.1],[0.229,-0.3]],"1":[[-0.271,26.9],[-0.261,24.5],[-0.251,22.5],[-0.241,20.2],[-0.231,18.5],[-0.221,16.8],[-0.211,15.4],[-0.201,14.3],[-0.191,13.2],[-0.181,12.2],[-0.171,11.4],[-0.161,10.7],[-0.151,10.1],[-0.141,9.5],[-0.131,9.1],[-0.121,8.6],[-0.111,8.3],[-0.101,7.9],[-0.091,7.6],[-0.081,7.2],[-0.071,6.8],[-0.061,6.6],[-0.051,6.4],[-0.041,6.1],[-0.031,5.8],[-0.021,5.5],[-0.011,5.2],[-0.001,4.9]],"10":[[-0.271,41.0],[-0.261,38.5],[-0.251,36.2],[-0.241,33.7],[-0.231,31.5],[-0.221,29.7],[-0.211,27.7],[-0.201,25.9],[-0.191,24.3],[-0.181,22.7],[-0.171,21.0],[-0.161,19.6],[-0.151,18.2],[-0.141,16.8],[-0.131,15.4],[-0.121,14.3],[-0.111,12.9],[-0.101,11.7],[-0.091,10.6],[-0.081,9.6],[-0.071,8.7],[-0.061,8.1],[-0.051,7.6],[-0.041,6.9],[-0.031,6.5],[-0.021,6.1],[-0.011,5.8],[-0.001,5.4],[0.009,5.1],[0.019,4.8],[0.029,4.4],[0.039,4.2],[0.049,4.0],[0.059,3.8],[0.069,3.5],[0.079,3.3],[0.089,3.2],[0.099,3.0],[0.109,2.8],[0.119,2.7],[0.129,2.6],[0.139,2.5],[0.149,2.3],[0.159,2.0],[0.179,2.4],[0.189,2.1],[0.199,2.0],[0.209,2.0],[0.219,1.9],[0.229,1.9]],"50":[[-0.271,67.4],[-0.261,65.5],[-0.251,63.7],[-0.241,62.0],[-0.231,60.2],[-0.221,58.6],[-0.211,57.0],[-0.201,55.3],[-0.191,53.9],[-0.181,52.3],[-0.171,50.8],[-0.161,49.0],[-0.151,47.6],[-0.141,46.2],[-0.131,44.6],[-0.121,43.1],[-0.111,41.5],[-0.101,39.9],[-0.081,36.7],[-0.071,34.9],[-0.061,33.2],[-0.051,31.5],[-0.041,29.6],[-0.031,27.6],[-0.021,25.9],[-0.011,24.0],[-0.001,22.3],[0.009,20.4],[0.019,18.5],[0.029,16.8],[0.039,15.0],[0.049,13.5],[0.059,12.0],[0.069,10.5],[0.079,9.3],[0.089,8.0],[0.099,6.8],[0.109,5.8],[0.119,5.0],[0.129,4.3],[0.139,3.8],[0.149,2.7],[0.159,2.4],[0.169,2.1],[0.179,1.7],[0.189,1.4],[0.199,1.2],[0.209,0.9],[0.219,0.7],[0.229,0.5]],"100":[[-0.271,89.9],[-0.261,87.2],[-0.251,84.4],[-0.241,81.6],[-0.231,78.5],[-0.221,75.7],[-0.211,72.9],[-0.201,70.1],[-0.191,67.2],[-0.181,64.4],[-0.171,61.2],[-0.161,58.4],[-0.151,55.5],[-0.141,52.7],[-0.131,49.7],[-0.121,46.9],[-0.111,44.0],[-0.101,41.0],[-0.091,38.2],[-0.081,35.4],[-0.071,32.8],[-0.061,30.3],[-0.051,27.7],[-0.041,25.1],[-0.031,22.7],[-0.021,20.3],[-0.011,18.3],[-0.001,16.2],[0.009,14.4],[0.019,12.7],[0.029,11.2],[0.039,9.8],[0.049,8.6],[0.059,7.6],[0.069,6.6],[0.079,5.9],[0.089,5.2],[0.099,4.7],[0.109,4.4],[0.119,3.8],[0.129,3.5],[0.139,3.3],[0.149,3.3],[0.159,3.0],[0.169,3.0],[0.179,2.9],[0.189,2.7],[0.199,2.7],[0.209,2.7],[0.219,2.7],[0.229,2.7]]},"anode_uor":[[1.31,-0.3],[1.32,2.3],[1.33,5.9],[1.34,9.3],[1.35,13.4],[1.36,17.9],[1.37,22.4],[1.38,27.4],[1.39,32.4],[1.4,37.9],[1.41,43.4],[1.42,48.8],[1.43,54.7],[1.44,60.4],[1.45,66.5],[1.46,72.6],[1.47,78.6],[1.48,84.9],[1.49,91.2],[1.5,97.6],[1.51,104.5],[1.52,110.6],[1.53,117.6],[1.54,124.1],[1.55,130.9],[1.56,138.1],[1.57,144.8],[1.58,152.2],[1.59,159.2],[1.6,166.9],[1.61,174.7]],"anode_oer":[[1.4,-0.3],[1.41,0.2],[1.42,0.3],[1.43,0.8],[1.44,1.3],[1.45,1.7],[1.46,2.3],[1.47,2.8],[1.48,3.6],[1.49,4.5],[1.5,6.1],[1.51,7.6],[1.52,9.7],[1.53,12.6],[1.54,15.4],[1.55,18.9],[1.56,22.9],[1.57,27.2],[1.58,31.8],[1.59,36.4],[1.6,41.7],[1.61,47.2]]},"fit":{"anode_Ru":1.1899533657973482,"anode_rms":0.08499213135742065,"cathode_Ru":2.0496608054866385,"cathode_j_bg":3.475452501617857,"cathode_rms_by_C":{"0":0.1157494454474997,"1":0.2052135339227886,"10":0.06425928481917476,"50":0.2919375149705317,"100":0.07197372863852848}}};
+/* ---- data: end */
+// Tiny SVG chart engine shared by the interactive pages (taken from the Ethanol-Water-VLE page of the same author).
+function interp(q, xs, ys) {
+  if (q <= xs[0]) return ys[0]; const n = xs.length; if (q >= xs[n - 1]) return ys[n - 1];
+  let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (xs[m] <= q) lo = m; else hi = m; }
+  return ys[lo] + (q - xs[lo]) / (xs[hi] - xs[lo]) * (ys[hi] - ys[lo]);
+}
+const NS = "http://www.w3.org/2000/svg";
+function mk(tag, at, parent) { const e = document.createElementNS(NS, tag); if (at) for (const k in at) e.setAttribute(k, at[k]); if (parent) parent.appendChild(e); return e; }
+function parts(str) { const out = []; const re = /([_^])\{([^}]*)\}/g; let last = 0, m; while ((m = re.exec(str))) { if (m.index > last) out.push([str.slice(last, m.index), ""]); out.push([m[2], m[1]]); last = re.lastIndex; } if (last < str.length) out.push([str.slice(last), ""]); return out; }
+function richSVG(str, el) { let sh = 0; for (const [t, k] of parts(str)) { const s = mk("tspan", null, el); const tgt = k === "_" ? 3 : k === "^" ? -4 : 0; if (tgt - sh) s.setAttribute("dy", tgt - sh); sh = tgt; if (k) s.setAttribute("font-size", "8.5"); s.textContent = t; } }
+function richHTML(str, el) { for (const [t, k] of parts(str)) { if (!k) el.appendChild(document.createTextNode(t)); else { const n = document.createElement(k === "_" ? "sub" : "sup"); n.textContent = t; el.appendChild(n); } } }
+function nice(min, max, n) {
+  const span = max - min; if (!(span > 0)) return [min];
+  const raw = span / Math.max(1, n), mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag;
+  const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * mag;
+  const out = []; for (let v = Math.ceil(min / step - 1e-9) * step; v <= max + step * 1e-9; v += step) out.push(+v.toFixed(12));
+  return out;
+}
+function logTicks(min, max) { const o = []; for (let e = Math.floor(Math.log10(min)); e <= Math.ceil(Math.log10(max)); e++) for (const m of [1, 2, 5]) { const v = m * 10 ** e; if (v >= min * 0.999 && v <= max * 1.001) o.push(v); } return o; }
+const fmtTick = (v) => { const a = Math.abs(v); if (a === 0) return "0"; if (a >= 1000) return v.toFixed(0); if (a >= 10) return +v.toFixed(1) + ""; if (a >= 1) return +v.toFixed(2) + ""; return +v.toFixed(3) + ""; };
+function lineDash(d) { return d === "dash" ? "6 4" : d === "dot" ? "1.5 3" : d === "dashdot" ? "7 3 1.5 3" : ""; }
+function keySVG(it) {
+  const s = mk("svg", { width: 22, height: 10, viewBox: "0 0 22 10", "aria-hidden": "true" });
+  if (it.kind === "line" || !it.kind) { const l = mk("line", { x1: 1, x2: 21, y1: 5, y2: 5 }, s); l.style.stroke = it.color; l.style.strokeWidth = it.width || 2; if (it.dash) l.setAttribute("stroke-dasharray", lineDash(it.dash)); l.setAttribute("stroke-linecap", "round"); }
+  else marker(s, it.kind, 11, 5, it.color, it.hollow, 3.6);
+  return s;
+}
+function marker(g, kind, x, y, color, hollow, r = 4) {
+  let e;
+  if (kind === "tri") e = mk("path", { d: `M${x},${y - r * 1.15}L${x + r},${y + r * 0.75}L${x - r},${y + r * 0.75}Z` }, g);
+  else if (kind === "diamond") e = mk("path", { d: `M${x},${y - r * 1.25}L${x + r * 1.05},${y}L${x},${y + r * 1.25}L${x - r * 1.05},${y}Z` }, g);
+  else if (kind === "square") e = mk("rect", { x: x - r * 0.9, y: y - r * 0.9, width: r * 1.8, height: r * 1.8 }, g);
+  else e = mk("circle", { cx: x, cy: y, r }, g);
+  if (hollow) { e.style.fill = "var(--surface)"; e.style.stroke = color; e.style.strokeWidth = 1.5; }
+  else { e.style.fill = color; e.style.stroke = "var(--surface)"; e.style.strokeWidth = 1.5; }
+  return e;
+}
+let chartSeq = 0;
+class Chart {
+  constructor(host, opt = {}) {
+    this.opt = Object.assign({ height: 300, square: false, maxH: 400, m: { l: 50, r: 12, t: 10, b: 40 } }, opt);
+    this.id = "c" + ++chartSeq;
+    this.leg = document.createElement("div"); this.leg.className = "legend"; host.appendChild(this.leg);
+    this.box = document.createElement("div"); this.box.className = "plotbox"; this.box.tabIndex = 0; host.appendChild(this.box);
+    this.svg = mk("svg", { role: "img" }, this.box);
+    this.tip = document.createElement("div"); this.tip.className = "tip"; this.tip.hidden = true; this.box.appendChild(this.tip);
+    this.spec = null; this.hx = null; this.W = 0;
+    new ResizeObserver(() => { const w = this.box.clientWidth; if (this.spec && w && Math.abs(w - this.W) > 0.5) this.draw(); }).observe(this.box);
+    const move = (ev) => { if (!this.sx) return; const r = this.svg.getBoundingClientRect(); this.hover(ev.clientX - r.left, ev.clientY - r.top); };
+    this.svg.addEventListener("pointermove", move);
+    this.svg.addEventListener("pointerdown", move);
+    this.svg.addEventListener("pointerleave", () => this.clear());
+    this.svg.addEventListener("click", (ev) => {
+      if (!this.sx || !this.spec) return; const r = this.svg.getBoundingClientRect(), px = ev.clientX - r.left, py = ev.clientY - r.top;
+      let best = null, bd = 12;
+      for (const se of this.spec.series) if (se.onPick) for (const p of se.pts) { if (!isFinite(p[0]) || !isFinite(p[1])) continue; const d = Math.hypot(this.sx(p[0]) - px, this.sy(p[1]) - py); if (d < bd) { bd = d; best = [se, p]; } }
+      if (best) best[0].onPick(best[1]);
+    });
+    this.box.addEventListener("focus", () => { if (!this.sx) return; this.kx = this.kx ?? (this.spec.x.min + this.spec.x.max) / 2; this.hover(this.sx(this.kx), null, true); });
+    this.box.addEventListener("blur", () => this.clear());
+    this.box.addEventListener("keydown", (e) => {
+      if (!this.sx) return; const sp = this.spec.x, st = (sp.max - sp.min) / 100;
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); this.kx = Math.min(sp.max, Math.max(sp.min, (this.kx ?? (sp.min + sp.max) / 2) + (e.key === "ArrowRight" ? st : -st))); this.hover(this.sx(this.kx), null, true); }
+      if (e.key === "Escape") this.clear();
+    });
+  }
+  set(spec) { this.spec = spec; this.svg.setAttribute("aria-label", spec.aria || ""); this.legend(); this.draw(); if (this.last) this.hover(...this.last); }
+  legend() {
+    this.leg.textContent = "";
+    for (const it of this.spec.series.filter((s) => s.name && !s.noLegend).concat(this.spec.marks?.filter((m) => m.legend) || [])) {
+      const sp = document.createElement("span"); sp.appendChild(keySVG({ kind: it.legendKind || it.kind === "points" && (it.shape || "circle") || it.kind === "point" && it.shape || "line", color: it.color, dash: it.dash, hollow: it.hollow, width: it.width }));
+      const t = document.createElement("span"); richHTML(it.legend || it.name, t); sp.appendChild(t); this.leg.appendChild(sp);
+    }
+  }
+  draw() {
+    const s = this.spec, o = this.opt, m = o.m;
+    const W = Math.max(240, this.box.clientWidth); this.W = this.box.clientWidth;
+    const H = o.square ? Math.min(o.maxH, Math.round(W * 0.92)) : o.height;
+    const svg = this.svg; svg.textContent = ""; svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H);
+    const x0 = m.l, x1 = W - m.r, y0 = H - m.b, y1 = m.t;
+    const lx = (v) => Math.log10(v);
+    const sx = s.x.log ? (v) => x0 + (lx(v) - lx(s.x.min)) / (lx(s.x.max) - lx(s.x.min)) * (x1 - x0)
+                       : (v) => x0 + (v - s.x.min) / (s.x.max - s.x.min) * (x1 - x0);
+    const sy = s.y.log ? (v) => y0 - (Math.log10(v) - Math.log10(s.y.min)) / (Math.log10(s.y.max) - Math.log10(s.y.min)) * (y0 - y1)
+                       : (v) => y0 - (v - s.y.min) / (s.y.max - s.y.min) * (y0 - y1);
+    this.sx = sx; this.sy = sy; this.box_ = { x0, x1, y0, y1, W, H };
+    this.ix = s.x.log ? (px) => Math.pow(10, lx(s.x.min) + (px - x0) / (x1 - x0) * (lx(s.x.max) - lx(s.x.min)))
+                      : (px) => s.x.min + (px - x0) / (x1 - x0) * (s.x.max - s.x.min);
+    const defs = mk("defs", null, svg); const cp = mk("clipPath", { id: this.id + "clip" }, defs); mk("rect", { x: x0, y: y1, width: x1 - x0, height: y0 - y1 }, cp);
+    const bg = mk("rect", { x: x0, y: y1, width: x1 - x0, height: y0 - y1 }, svg); bg.style.fill = "var(--surface)";
+    // grid & ticks
+    const gx = mk("g", null, svg), gy = mk("g", null, svg);
+    const xt = s.x.ticks || (s.x.log ? logTicks(s.x.min, s.x.max) : nice(s.x.min, s.x.max, Math.max(3, Math.floor((x1 - x0) / 70))));
+    const yt = s.y.ticks || (s.y.log ? logTicks(s.y.min, s.y.max) : nice(s.y.min, s.y.max, Math.max(3, Math.floor((y0 - y1) / 42))));
+    for (const v of xt) { const X = sx(v); const l = mk("line", { x1: X, x2: X, y1: y1, y2: y0 }, gx); l.style.stroke = "var(--grid)"; l.style.strokeWidth = 1; const t = mk("text", { x: X, y: y0 + 15, "text-anchor": "middle" }, gx); t.textContent = (s.x.fmt || fmtTick)(v); }
+    for (const v of yt) { const Y = sy(v); const l = mk("line", { x1: x0, x2: x1, y1: Y, y2: Y }, gy); l.style.stroke = "var(--grid)"; l.style.strokeWidth = 1; const t = mk("text", { x: x0 - 6, y: Y + 3.5, "text-anchor": "end" }, gy); t.textContent = (s.y.fmt || fmtTick)(v); }
+    const ax = mk("path", { d: `M${x0},${y1}V${y0}H${x1}` }, svg); ax.style.stroke = "var(--axis)"; ax.style.fill = "none";
+    if (!s.y.log && s.y.min < 0 && s.y.max > 0) { const z = mk("line", { x1: x0, x2: x1, y1: sy(0), y2: sy(0) }, svg); z.style.stroke = "var(--axis)"; z.style.strokeWidth = 1; }
+    const xl = mk("text", { class: "lab", x: (x0 + x1) / 2, y: H - 6, "text-anchor": "middle" }, svg); richSVG(s.x.label, xl);
+    const yl = mk("text", { class: "lab", x: 0, y: 0, "text-anchor": "middle", transform: `translate(12,${(y0 + y1) / 2}) rotate(-90)` }, svg); richSVG(s.y.label, yl);
+    const plot = mk("g", { "clip-path": `url(#${this.id}clip)` }, svg);
+    for (const mk_ of s.marks || []) if (mk_.kind === "hline" || mk_.kind === "vline" || mk_.kind === "seg") this.drawMark(plot, mk_);
+    for (const se of s.series) {
+      if (se.kind === "points") {
+        const g = mk("g", null, plot);
+        for (const p of se.pts) {
+          if (se.err && p[2]) { const a = mk("path", { d: se.errX ? `M${sx(p[0] - p[2])},${sy(p[1])}H${sx(p[0] + p[2])}` : `M${sx(p[0])},${sy(p[1] - p[2])}V${sy(p[1] + p[2])}M${sx(p[0]) - 2.5},${sy(p[1] - p[2])}h5M${sx(p[0]) - 2.5},${sy(p[1] + p[2])}h5` }, g); a.style.stroke = "var(--muted)"; a.style.strokeWidth = 1; a.style.fill = "none"; }
+        }
+        for (const p of se.pts) { if (!isFinite(p[0]) || !isFinite(p[1])) continue; const e = marker(g, se.shape || "circle", sx(p[0]), sy(p[1]), se.color, se.hollow, se.r || 3.6); if (se.opacity) e.style.opacity = se.opacity; }
+      } else {
+        let d = "", pen = false;
+        for (const p of se.pts) { if (!isFinite(p[0]) || !isFinite(p[1]) || (s.y.log && p[1] <= 0)) { pen = false; continue; } const X = sx(p[0]), Y = Math.max(-1e4, Math.min(1e4, sy(p[1]))); d += (pen ? "L" : "M") + X.toFixed(2) + "," + Y.toFixed(2); pen = true; }
+        const path = mk("path", { d }, plot); path.style.fill = "none"; path.style.stroke = se.color; path.style.strokeWidth = se.width || 2;
+        path.setAttribute("stroke-linejoin", "round"); path.setAttribute("stroke-linecap", "round"); if (se.dash) path.setAttribute("stroke-dasharray", lineDash(se.dash));
+      }
+    }
+    for (const mk_ of s.marks || []) if (mk_.kind === "point") this.drawMark(svg, mk_);
+    this.hl = mk("g", null, svg);
+  }
+  drawMark(g, mk_) {
+    const { sx, sy } = this, b = this.box_;
+    if (mk_.kind === "hline" || mk_.kind === "vline") {
+      const l = mk_.kind === "hline" ? mk("line", { x1: b.x0, x2: b.x1, y1: sy(mk_.at), y2: sy(mk_.at) }, g) : mk("line", { x1: sx(mk_.at), x2: sx(mk_.at), y1: b.y1, y2: b.y0 }, g);
+      l.style.stroke = mk_.color || "var(--muted)"; l.style.strokeWidth = mk_.width || 1; if (mk_.dash) l.setAttribute("stroke-dasharray", lineDash(mk_.dash));
+      if (mk_.label) { const t = mk("text", { class: "ann", x: mk_.kind === "hline" ? b.x1 - 4 : sx(mk_.at) + 4, y: mk_.kind === "hline" ? sy(mk_.at) - 4 : b.y1 + 12, "text-anchor": mk_.kind === "hline" ? "end" : "start" }, g); richSVG(mk_.label, t); }
+    } else if (mk_.kind === "seg") {
+      const l = mk("line", { x1: sx(mk_.a[0]), y1: sy(mk_.a[1]), x2: sx(mk_.b[0]), y2: sy(mk_.b[1]) }, g);
+      l.style.stroke = mk_.color || "var(--muted)"; l.style.strokeWidth = mk_.width || 1.2; if (mk_.dash) l.setAttribute("stroke-dasharray", lineDash(mk_.dash));
+    } else if (mk_.kind === "point") {
+      const X = sx(mk_.x), Y = sy(mk_.y);
+      if (X < b.x0 - 1 || X > b.x1 + 1 || Y < b.y1 - 1 || Y > b.y0 + 1) return;
+      marker(g, mk_.shape || "diamond", X, Y, mk_.color, false, mk_.r || 4.6);
+      if (mk_.label) { const right = X > (b.x0 + b.x1) / 2; const t = mk("text", { class: "ann", x: X + (right ? -8 : 8), y: Y + (mk_.dy ?? -8), "text-anchor": right ? "end" : "start" }, g); richSVG(mk_.label, t); }
+    }
+  }
+  clear() { this.last = null; this.tip.hidden = true; if (this.hl) this.hl.textContent = ""; }
+  hover(px, py, kb) {
+    const s = this.spec, b = this.box_; if (!s || !b) return;
+    if (px < b.x0 - 6 || px > b.x1 + 6) { this.clear(); return; }
+    px = Math.min(b.x1, Math.max(b.x0, px)); this.last = [px, py, kb];
+    const xq = this.ix(px); if (kb) this.kx = xq;
+    const hl = this.hl; hl.textContent = "";
+    if (s.crosshair !== false) { const vl = mk("line", { x1: px, x2: px, y1: b.y1, y2: b.y0 }, hl); vl.style.stroke = "var(--ink-2)"; vl.style.strokeWidth = 1; vl.setAttribute("stroke-dasharray", "2 3"); }
+    const rows = [];
+    for (const se of s.series) {
+      if (se.tip === false) continue;
+      if (se.kind === "points") {
+        if (py == null && !kb) continue;
+        let best = null, bd = 1e9;
+        for (const p of se.pts) { if (!isFinite(p[0]) || !isFinite(p[1])) continue; const d = py == null ? Math.abs(this.sx(p[0]) - px) : Math.hypot(this.sx(p[0]) - px, this.sy(p[1]) - py); if (d < bd) { bd = d; best = p; } }
+        if (best && bd < 16) { rows.push({ se, text: se.fmtPt ? se.fmtPt(best) : best[1].toFixed(3), pt: best }); }
+        continue;
+      }
+      const pts = se.sorted || (se.sorted = se.pts.filter((p) => isFinite(p[0]) && isFinite(p[1])).slice().sort((a, b) => a[0] - b[0]));
+      if (!pts.length || xq < pts[0][0] - 1e-9 || xq > pts[pts.length - 1][0] + 1e-9) continue;
+      const v = interp(xq, pts.map((p) => p[0]), pts.map((p) => p[1]));
+      if (!isFinite(v) || (s.y.log && v <= 0)) continue;
+      rows.push({ se, text: (se.fmt || ((z) => z.toFixed(3)))(v), pt: [xq, v] });
+    }
+    for (const r of rows) { const Y = this.sy(r.pt[1]); if (Y < b.y1 - 2 || Y > b.y0 + 2) continue; marker(hl, r.se.kind === "points" ? (r.se.shape || "circle") : "circle", this.sx(r.pt[0]), Y, r.se.color, false, r.se.kind === "points" ? 5 : 3.6); }
+    const tip = this.tip; tip.textContent = "";
+    const titled = rows.find((r) => r.se.title);
+    const t = document.createElement("div"); t.className = "t"; richHTML(titled ? titled.se.title(titled.pt) : (s.tipTitle || ((x) => "x = " + x.toFixed(3)))(xq), t); tip.appendChild(t);
+    for (const r of rows) {
+      const d = document.createElement("div"); d.className = "r";
+      d.appendChild(keySVG({ kind: r.se.kind === "points" ? (r.se.shape || "circle") : "line", color: r.se.color, dash: r.se.dash, hollow: r.se.hollow }));
+      const bb = document.createElement("b"); bb.textContent = r.text; d.appendChild(bb);
+      const i = document.createElement("i"); richHTML(r.se.tipName || r.se.name || "", i); d.appendChild(i); tip.appendChild(d);
+    }
+    if (!rows.length) { this.tip.hidden = true; return; }
+    tip.hidden = false;
+    const tw = tip.offsetWidth, left = px + 14 + tw > b.W ? px - 14 - tw : px + 14;
+    tip.style.left = Math.max(0, left) + "px"; tip.style.top = (b.y1 + 4) + "px";
+  }
+}
+
+
+// ---- physics: begin (urea_nitrate_cell/model.py and the measured-curve functions of calibration.py; checked by scripts/verify_web_page.py)
+const F = 96485.0, RT_F = 8.314 * 298.15 / F, D_NO3 = 1.902e-5, N_E_NO3 = 8, N_E_UOR = 6;
+const E0 = { HER: 0.000, UOR_lit: 0.37, UOR_calc: 0.072, UOR_CO3: -0.025, NO3RR: 0.708, OER: 1.229 };
+function tafel(eta, eta10, b) { return eta <= 0 ? 0 : 10 * (10 ** (eta / b) - 1) / (10 ** (eta10 / b) - 1); }
+function jLimNo3(C, delta) { return N_E_NO3 * F * D_NO3 * (C * 1e-6) / (delta * 1e-4) * 1e3; }
+function jUor(E, p) { return p.UOR_on === false ? 0 : tafel(E - p.E0_UOR, p.E10_UOR - p.E0_UOR, p.b_UOR); }
+function jOer(E, p) { return tafel(E - E0.OER, p.E10_OER - E0.OER, p.b_OER); }
+function jNo3(E, p, C) {
+  let jk = tafel(E0.NO3RR - E, E0.NO3RR - p.E10_NO3, p.b_NO3) * (C / p.C_ref) ** p.gamma;
+  if (jk <= 0) return 0; const jl = jLimNo3(C, p.delta_um); return jk * jl / (jk + jl);
+}
+function jHer(E, p) { return tafel(E0.HER - E, E0.HER - p.E10_HER, p.b_HER); }
+// root of an increasing function by bisection, to 1e-13 (the Python model uses scipy's brentq with xtol 1e-12)
+function root(f, a, b) {
+  let fa = f(a), fb = f(b); if (!(fa <= 0 && fb >= 0)) return NaN;
+  for (let i = 0; i < 200 && b - a > 1e-13; i++) { const m = (a + b) / 2, fm = f(m); if (fm < 0) a = m; else b = m; }
+  return (a + b) / 2;
+}
+function anodePotential(j, p) { return root((E) => jUor(E, p) + jOer(E, p) - j, Math.min(p.E0_UOR, E0.OER), 3.0); }
+function cathodePotential(j, p, C) { return root((E) => j - jNo3(E, p, C) - jHer(E, p), -3.0, E0.NO3RR); }
+function solveCell(j, p, C) {
+  C = C ?? p.C_NO3; const Ea = anodePotential(j, p), Ec = cathodePotential(j, p, C);
+  return { V: Ec - Ea - j * 1e-3 * p.R_ohm, Ea, Ec, FE_UOR: jUor(Ea, p) / j, FE_NO3: jNo3(Ec, p, C) / j };
+}
+function simulateBatch(p, strategy, jSet, frac, b) {
+  let C = b.C0, t = 0, EJ = 0, Q = 0, Qno3 = 0, Quor = 0; const T = [0], Cs = [C], FEs = [];
+  while (C > (1 - b.removal) * b.C0 && t < 72 * 3600) {
+    const j = strategy === "cc" ? jSet : Math.min(jSet, frac * jLimNo3(C, p.delta_um));
+    const r = solveCell(j, p, C); if (!isFinite(r.V)) return null;
+    const I = j * 1e-3 * b.A_cm2, dC = r.FE_NO3 * I / (N_E_NO3 * F) / b.V_L * 1e3 * b.dt;
+    C = Math.max(C - dC, 0); t += b.dt; EJ += r.V * I * b.dt; Q += I * b.dt; Qno3 += r.FE_NO3 * I * b.dt; Quor += r.FE_UOR * I * b.dt;
+    T.push(t / 3600); Cs.push(C); FEs.push(r.FE_NO3);
+  }
+  const nNo3 = (b.C0 - C) * 1e-3 * b.V_L, nUrea = Quor / (N_E_UOR * F) * 2, kWh = EJ / 3.6e6;
+  return { t: T, C: Cs, FE: FEs, t_end: t / 3600, E_kWh: kWh, FE_avg: Qno3 / Q, kWh_per_kgN_no3: kWh / (nNo3 * 14.007e-3), kWh_per_kgN_all: kWh / ((nNo3 + nUrea) * 14.007e-3) };
+}
+// current seen by the potentiostat at applied potential E: uncompensated resistance Ru (and background j_bg at the cathode)
+function anodeMeas(E, p, Ru, withUor) {
+  const q = Object.assign({}, p, { UOR_on: withUor }), f = (j) => j - (jUor(E - j * 1e-3 * Ru, q) + jOer(E - j * 1e-3 * Ru, q));
+  return f(0) >= 0 ? 0 : root(f, 0, 1e4);
+}
+function cathodeMeas(E, C, p, Ru, jbg) {
+  return root((j) => j - (jbg + jHer(E + j * 1e-3 * Ru, p) + (C > 0 ? jNo3(E + j * 1e-3 * Ru, p, C) : 0)), 0, 1e4);
+}
+// ---- physics: end
+
+// =================================================================== state
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const f2 = (v) => isFinite(v) ? v.toFixed(2) : "—", f3 = (v) => isFinite(v) ? v.toFixed(3) : "—", pct = (v, d = 0) => isFinite(v) ? (100 * v).toFixed(d) + " %" : "—";
+const sgn = (v, d = 3) => isFinite(v) ? (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d) : "—";
+const MGN = 14.007;   // mg N per mmol
+const PKEYS = ["E10_UOR", "b_UOR", "E10_OER", "b_OER", "E10_NO3", "b_NO3", "gamma", "E10_HER", "b_HER", "delta_um", "C_NO3", "R_ohm", "E0_UOR"];
+const CONTROLS = {
+  opGrp: [{ k: "j", lab: "Current density j", u: "mA cm⁻²", min: 0.5, max: 200, log: true, digits: 3 }, { k: "C_NO3", lab: "Nitrate concentration", u: "mM", min: 0.5, max: 1000, log: true, digits: 3 }],
+  anGrp: [{ k: "E10_UOR", lab: "UOR E₁₀", u: "V", min: 0.40, max: 1.50, step: 0.001 }, { k: "b_UOR", lab: "UOR Tafel slope", u: "V/dec", min: 0.02, max: 0.15, step: 0.001 },
+          { k: "E10_OER", lab: "OER E₁₀", u: "V", min: 1.40, max: 1.80, step: 0.001 }, { k: "b_OER", lab: "OER Tafel slope", u: "V/dec", min: 0.03, max: 0.15, step: 0.001 }],
+  caGrp: [{ k: "E10_NO3", lab: "NO₃RR E₁₀ (100 mM)", u: "V", min: -0.30, max: 0.65, step: 0.001 }, { k: "b_NO3", lab: "NO₃RR Tafel slope", u: "V/dec", min: 0.03, max: 0.20, step: 0.001 },
+          { k: "gamma", lab: "Reaction order γ", u: "", min: 0, max: 1.5, step: 0.01 }, { k: "delta_um", lab: "Diffusion layer δ", u: "µm", min: 5, max: 300, log: true, digits: 3 },
+          { k: "E10_HER", lab: "HER E₁₀", u: "V", min: -0.50, max: 0.0, step: 0.001 }, { k: "b_HER", lab: "HER Tafel slope", u: "V/dec", min: 0.03, max: 0.20, step: 0.001 }],
+  cellGrp: [{ k: "R_ohm", lab: "Ohmic resistance", u: "Ω cm²", min: 0, max: 10, step: 0.05 }],
+};
+const P0 = Object.assign({}, DATA.scenarios.S1);
+const DEFAULT = Object.assign({ tab: "cell", j: 10, ref: true, UOR_on: true }, P0);
+const S = Object.assign({}, DEFAULT);
+for (const [k, v] of new URLSearchParams(location.hash.slice(1))) if (k in DEFAULT) S[k] = typeof DEFAULT[k] === "number" ? (isFinite(+v) ? +v : DEFAULT[k]) : typeof DEFAULT[k] === "boolean" ? v === "1" : v;
+const theme = new URLSearchParams(location.search).get("theme"); if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+function saveHash() { const p = new URLSearchParams(); for (const k in DEFAULT) if (S[k] !== DEFAULT[k]) p.set(k, typeof S[k] === "boolean" ? (S[k] ? "1" : "0") : S[k]); history.replaceState(null, "", p.toString() ? "#" + p.toString() : location.pathname + location.search); }
+const params = () => { const p = {}; for (const k in P0) p[k] = S[k] ?? P0[k]; p.UOR_on = S.UOR_on !== false; return p; };
+
+// =================================================================== controls
+for (const [k, label] of Object.entries(DATA.labels)) {
+  const b = el("button", "preset"); b.type = "button"; b.dataset.preset = k;
+  b.append(document.createTextNode(label.replace(/ \(.*\)$/, "")), el("small", null, k === "S1" ? "fitted to Yao et al. (2025)" : k === "OER" ? "same cathode, no urea at the anode" : "assumed catalyst"));
+  b.addEventListener("click", () => { Object.assign(S, { UOR_on: true }, DATA.scenarios[k]); update(); }); $("presets").append(b);
+}
+const syncs = [];
+for (const [grp, list] of Object.entries(CONTROLS)) for (const p of list) {
+  const c = el("div", "ctl"), row = el("div", "row"), lab = el("label"); lab.htmlFor = "n_" + p.k; lab.textContent = p.lab; if (p.u) lab.append(el("span", "u", p.u));
+  const num = el("input"); num.type = "number"; num.id = "n_" + p.k; num.step = p.step || "any";
+  const rng = el("input"); rng.type = "range"; rng.min = 0; rng.max = 1000; rng.step = 1; rng.setAttribute("aria-label", p.lab);
+  const toR = (v) => p.log ? 1000 * Math.log(v / p.min) / Math.log(p.max / p.min) : 1000 * (v - p.min) / (p.max - p.min);
+  const fromR = (r) => p.log ? +(p.min * Math.pow(p.max / p.min, r / 1000)).toPrecision(p.digits) : +(p.min + r / 1000 * (p.max - p.min)).toFixed(4);
+  rng.addEventListener("input", () => { S[p.k] = fromR(+rng.value); update(rng); });
+  num.addEventListener("change", () => { let v = +num.value; if (!isFinite(v)) v = S[p.k]; S[p.k] = Math.min(p.max, Math.max(p.min, v)); update(); });
+  row.append(lab, num); c.append(row, rng);
+  const host = $(grp); host.insertBefore(c, grp === "anGrp" ? $("e0ctl") : null);
+  syncs.push((skip) => { num.value = +(+S[p.k]).toPrecision(5); if (skip !== rng) rng.value = toR(S[p.k]); });
+}
+for (const [k, lab] of [["UOR_lit", "0.37 V (literature)"], ["UOR_calc", "0.072 V (CO₂)"], ["UOR_CO3", "−0.025 V (CO₃²⁻)"]]) {
+  const b = el("button", null, lab); b.type = "button"; b.dataset.v = String(E0[k]); b.addEventListener("click", () => { S.E0_UOR = E0[k]; update(); }); $("segE0").append(b);
+}
+$("cUor").addEventListener("change", () => { S.UOR_on = $("cUor").checked; update(); });
+$("cRef").addEventListener("change", () => { S.ref = $("cRef").checked; update(); });
+const TABS = ["cell", "data", "batch", "model"];
+for (const t of TABS) $("t-" + t).addEventListener("click", () => { S.tab = t; update(); });
+
+// =================================================================== charts
+const cV = new Chart($("cV"), { height: 280 }), cP = new Chart($("cP"), { height: 280 }), cE = new Chart($("cE"), { height: 280 }), cFE = new Chart($("cFE"), { height: 280 });
+const cCath = new Chart($("cCath"), { height: 300 }), cAn = new Chart($("cAn"), { height: 300 });
+const cBatchC = new Chart($("cBatchC"), { height: 280 }), cBatchFE = new Chart($("cBatchFE"), { height: 280 });
+const JGRID = Array.from({ length: 121 }, (_, i) => 0.5 * Math.pow(400, i / 120));   // 0.5 to 200 mA cm-2
+const REF = { S1: "var(--s1)", S2: "var(--s3)", S3: "var(--s2)", OER: "var(--muted)" };
+const jAxis = { min: 0.5, max: 200, log: true, ticks: [0.5, 1, 2, 5, 10, 20, 50, 100, 200], label: "current density (mA cm^{−2})" };
+const minus = (s) => String(s).replace(/-/g, "−");
+
+function curves(p) { return JGRID.map((j) => [j, solveCell(j, p)]); }
+function renderCell(p, op) {
+  const cur = curves(p), series = [], pow = [], ePts = [], fe = [];
+  if (S.ref) for (const [k, col] of Object.entries(REF)) {
+    const c = curves(Object.assign({}, DATA.scenarios[k], { C_NO3: p.C_NO3, R_ohm: p.R_ohm }));
+    series.push({ pts: c.map(([j, r]) => [j, r.V]), color: col, width: 1.2, dash: "dash", name: k === "OER" ? "OER control" : k, fmt: (v) => minus(v.toFixed(3)) + " V" });
+    pow.push({ pts: c.map(([j, r]) => [j, r.V * j]), color: col, width: 1.2, dash: "dash", name: k === "OER" ? "OER control" : k, fmt: (v) => minus(v.toFixed(2)) });
+  }
+  series.unshift({ pts: cur.map(([j, r]) => [j, r.V]), color: "var(--ink)", width: 2.4, name: "parameters on the left", fmt: (v) => minus(v.toFixed(3)) + " V" });
+  pow.unshift({ pts: cur.map(([j, r]) => [j, r.V * j]), color: "var(--ink)", width: 2.4, name: "parameters on the left", fmt: (v) => minus(v.toFixed(2)) + " mW cm⁻²" });
+  const vs = series.flatMap((s) => s.pts.map((q) => q[1])).filter(isFinite), ps = pow.flatMap((s) => s.pts.map((q) => q[1])).filter(isFinite);
+  const opMark = (y, lab) => ({ kind: "point", x: S.j, y, color: "var(--accent)", shape: "circle", r: 5, label: lab });
+  cV.set({ aria: "Cell voltage against current density", x: jAxis, y: { min: Math.min(-0.2, ...vs) - 0.05, max: Math.max(0.2, ...vs) + 0.05, label: "V_{cell} (V)", fmt: (v) => minus(fmtTick(v)) },
+    series, marks: [{ kind: "hline", at: 0, color: "var(--muted)", label: "power ↑ / bias ↓" }, opMark(op.V, minus(op.V.toFixed(3)) + " V")], tipTitle: (x) => "j = " + x.toPrecision(3) + " mA cm⁻²" });
+  cP.set({ aria: "Power density", x: jAxis, y: { min: Math.min(-1, ...ps) * 1.05, max: Math.max(1, ...ps) * 1.05, label: "V_{cell} · j (mW cm^{−2})", fmt: (v) => minus(fmtTick(v)) },
+    series: pow, marks: [{ kind: "hline", at: 0, color: "var(--muted)" }, opMark(op.V * S.j)], tipTitle: (x) => "j = " + x.toPrecision(3) + " mA cm⁻²" });
+  const Ea = cur.map(([j, r]) => [j, r.Ea]), Ec = cur.map(([j, r]) => [j, r.Ec]), es = Ea.concat(Ec).map((q) => q[1]).concat([E0.NO3RR, p.E0_UOR]).filter(isFinite);
+  cE.set({ aria: "Electrode potentials", x: jAxis, y: { min: Math.min(...es) - 0.1, max: Math.max(...es) + 0.1, label: "E (V vs RHE)", fmt: (v) => minus(fmtTick(v)) },
+    series: [{ pts: Ea, color: "var(--s2)", name: "anode E_{a}", fmt: (v) => v.toFixed(3) + " V" }, { pts: Ec, color: "var(--s1)", name: "cathode E_{c}", fmt: (v) => minus(v.toFixed(3)) + " V" }],
+    marks: [{ kind: "hline", at: E0.NO3RR, color: "var(--s1)", dash: "dot", label: "E° NO₃⁻/NH₃ 0.708 V" }, { kind: "hline", at: p.E0_UOR, color: "var(--s2)", dash: "dot", label: "E° urea " + minus(p.E0_UOR.toFixed(3)) + " V" }],
+    tipTitle: (x) => "j = " + x.toPrecision(3) + " mA cm⁻²" });
+  cFE.set({ aria: "Faradaic efficiency", x: jAxis, y: { min: 0, max: 1.02, label: "Faradaic efficiency", fmt: (v) => Math.round(100 * v) + " %" },
+    series: [{ pts: cur.map(([j, r]) => [j, r.FE_NO3]), color: "var(--s1)", name: "nitrate → ammonia (cathode)", fmt: (v) => pct(v, 1) }, { pts: cur.map(([j, r]) => [j, r.FE_UOR]), color: "var(--s2)", name: "urea oxidation (anode)", fmt: (v) => pct(v, 1) }],
+    marks: [{ kind: "vline", at: jLimNo3(p.C_NO3, p.delta_um), color: "var(--muted)", dash: "dash", label: "j_{lim}" }], tipTitle: (x) => "j = " + x.toPrecision(3) + " mA cm⁻²" });
+}
+const CCOL = { "0": "var(--muted)", "1": "var(--s1)", "10": "var(--s3)", "50": "var(--s4)", "100": "var(--s2)" };
+function renderData(p) {
+  const f = DATA.fit, series = [], rows = [];
+  const Egrid = Array.from({ length: 81 }, (_, i) => -0.30 + 0.0081 * i);
+  for (const [C, pts] of Object.entries(DATA.yao.cathode)) {
+    const c = +C, held = C === "50", model = Egrid.map((E) => [E, cathodeMeas(E, c, p, f.cathode_Ru, f.cathode_j_bg)]);
+    series.push({ pts: model, color: CCOL[C], width: 1.8, name: `${C} mM model`, noLegend: true, fmt: (v) => v.toFixed(1) });
+    series.push({ kind: "points", pts: pts.map((q) => [q[0], q[1]]), color: CCOL[C], hollow: held, r: 2.8, name: `${C} mM${held ? " (held out)" : ""}`, tip: false });
+    const res = pts.filter((q) => q[1] >= 3).map((q) => (cathodeMeas(q[0], c, p, f.cathode_Ru, f.cathode_j_bg) - q[1]) / (q[1] + 3));
+    rows.push([`cathode, ${C} mM NaNO₃${held ? " (not used in the fit)" : ""}`, Math.sqrt(res.reduce((a, r) => a + r * r, 0) / res.length), f.cathode_rms_by_C[C]]);
+  }
+  cCath.set({ aria: "Cathode LSV against data", x: { min: -0.30, max: 0.35, label: "applied potential (V vs RHE)", fmt: (v) => minus(fmtTick(v)) }, y: { min: 0, max: 95, label: "cathodic current (mA cm^{−2})" }, series, tipTitle: (x) => "E = " + minus(x.toFixed(3)) + " V" });
+  $("cathSub").textContent = `Lines: model with the cathode parameters on the left, R_u = ${f.cathode_Ru.toFixed(2)} Ω cm² and a background current of ${f.cathode_j_bg.toFixed(2)} mA cm⁻² (fitted); dots: data, open dots: the 50 mM curve held out of the fit.`;
+  const EA = Array.from({ length: 81 }, (_, i) => 1.28 + 0.0035 * i), an = [];
+  for (const [key, pts, uor, col, name] of [["uor", DATA.yao.anode_uor, true, "var(--s2)", "1 M NaOH + 0.5 M urea"], ["oer", DATA.yao.anode_oer, false, "var(--muted)", "1 M NaOH (OER only)"]]) {
+    an.push({ pts: EA.map((E) => [E, anodeMeas(E, p, f.anode_Ru, uor)]), color: col, width: 1.8, name: name + " model", noLegend: true, fmt: (v) => v.toFixed(1) });
+    an.push({ kind: "points", pts: pts.map((q) => [q[0], q[1]]), color: col, r: 2.8, name, tip: false });
+    const res = pts.filter((q) => q[1] >= (uor ? 2 : 5)).map((q) => (anodeMeas(q[0], p, f.anode_Ru, uor) - q[1]) / (q[1] + 3));
+    rows.push([`anode, ${name}`, Math.sqrt(res.reduce((a, r) => a + r * r, 0) / res.length), null]);
+  }
+  cAn.set({ aria: "Anode LSV against data", x: { min: 1.28, max: 1.56, label: "applied potential (V vs RHE)" }, y: { min: 0, max: 180, label: "anodic current (mA cm^{−2})" }, series: an, tipTitle: (x) => "E = " + x.toFixed(3) + " V" });
+  $("anSub").textContent = `Lines: model with the anode parameters on the left and R_u = ${f.anode_Ru.toFixed(2)} Ω cm² (fitted); dots: data.`;
+  const t = $("rmsTable"); t.textContent = ""; const hr = el("tr"); for (const h of ["Curve", "RMS relative error now", "at the fit (calibration.py)"]) hr.append(el("th", null, h)); t.append(hr);
+  for (const [name, now, fit] of rows) { const tr = el("tr"); tr.append(el("td", "txt", name), el("td", null, pct(now, 1)), el("td", null, fit == null ? "—" : pct(fit, 1))); t.append(tr); }
+  $("answerData").innerHTML = `<p>Relative error (j<sub>model</sub> − j<sub>data</sub>)/(j<sub>data</sub> + 3 mA cm⁻²) over the points above 3 mA cm⁻² (cathode) or 2 and 5 mA cm⁻² (anode), as in <code>calibration.py</code>. The S1 parameters reproduce the fitted curves; move a slider to see how quickly the agreement degrades. The 50 mM curve was never used in the fit and lies above the 100 mM curve near 0 V in the source data.</p>`;
+}
+function renderBatch(p) {
+  const b = DATA.batch, runs = { cc: simulateBatch(p, "cc", 10, 0.8, b), follow: simulateBatch(p, "follow", 10, 0.8, b) };
+  const lab = { cc: "constant 10 mA cm⁻²", follow: "following 0.8 j_lim (at most 10)" }, col = { cc: "var(--s2)", follow: "var(--s1)" };
+  const sC = [], sF = []; let tmax = 0;
+  for (const k of ["cc", "follow"]) { const r = runs[k]; if (!r) continue; tmax = Math.max(tmax, r.t_end);
+    sC.push({ pts: r.t.map((t, i) => [t, r.C[i] * MGN]), color: col[k], name: lab[k], fmt: (v) => v.toFixed(1) + " mg N/L" });
+    sF.push({ pts: r.FE.map((v, i) => [r.t[i + 1], v]), color: col[k], name: lab[k], fmt: (v) => pct(v, 1) }); }
+  $("batchSub").textContent = `${(b.V_L * 1000).toFixed(0)} mL at ${(b.C0 * MGN).toFixed(0)} mg N/L on a ${b.A_cm2.toFixed(0)} cm² cathode, until ${(100 * b.removal).toFixed(0)} % is removed; parameters on the left.`;
+  const xa = { min: 0, max: Math.max(0.5, tmax * 1.03), label: "time (h)" };
+  cBatchC.set({ aria: "Nitrate concentration over time", x: xa, y: { min: 0, max: b.C0 * MGN * 1.05, label: "nitrate (mg N L^{−1})" }, series: sC, marks: [{ kind: "hline", at: (1 - b.removal) * b.C0 * MGN, color: "var(--muted)", dash: "dash", label: "90 % removed" }], tipTitle: (x) => "t = " + x.toFixed(2) + " h" });
+  cBatchFE.set({ aria: "Faradaic efficiency over time", x: xa, y: { min: 0, max: 1.02, label: "nitrate Faradaic efficiency", fmt: (v) => Math.round(100 * v) + " %" }, series: sF, tipTitle: (x) => "t = " + x.toFixed(2) + " h" });
+  const t = $("batchTable"); t.textContent = ""; const hr = el("tr");
+  for (const h of ["Current", "time to 90 %", "average FE (nitrate)", "energy", "per kg N removed (nitrate)", "per kg N incl. urea N"]) hr.append(el("th", null, h)); t.append(hr);
+  for (const k of ["cc", "follow"]) { const r = runs[k], tr = el("tr"); if (!r) continue;
+    tr.append(el("td", "txt", lab[k]), el("td", null, r.t_end.toFixed(2) + " h"), el("td", null, pct(r.FE_avg, 1)), el("td", null, sgn(1000 * r.E_kWh, 2) + " Wh"), el("td", null, sgn(r.kWh_per_kgN_no3, 1) + " kWh"), el("td", null, sgn(r.kWh_per_kgN_all, 1) + " kWh")); t.append(tr); }
+  const a = runs.cc, f = runs.follow;
+  $("answerBatch").innerHTML = a && f ? `<p>Following the falling limiting current keeps the nitrate efficiency at ${pct(f.FE_avg)} instead of ${pct(a.FE_avg)} and changes the energy from ${sgn(a.kWh_per_kgN_no3, 0)} to ${sgn(f.kWh_per_kgN_no3, 0)} kWh per kg N, at the cost of ${f.t_end.toFixed(2)} h instead of ${a.t_end.toFixed(2)} h. Negative energy means it is consumed.</p>` : "<p>No solution for these parameters.</p>";
+}
+function renderParams(p) {
+  const t = $("paramTable"); t.textContent = ""; const hr = el("tr"); for (const h of ["Parameter", "now", "S1 (fitted)"]) hr.append(el("th", null, h)); t.append(hr);
+  for (const k of PKEYS) { const tr = el("tr"); tr.append(el("td", "txt", k), el("td", null, String(+(+p[k]).toPrecision(4))), el("td", null, String(+P0[k].toPrecision(4)))); t.append(tr); }
+}
+function renderReadouts(p, op) {
+  const box = $("readouts"); box.textContent = "";
+  const ro = (k, v, unit, s, cls) => { const d = el("div", "ro"); d.append(el("div", "k", k)); const vv = el("div", "v" + (cls ? " " + cls : ""), v); if (unit) vv.append(el("small", null, " " + unit)); d.append(vv); if (s) d.append(el("div", "s", s)); box.append(d); };
+  ro(`Cell voltage at ${+S.j.toPrecision(3)} mA cm⁻²`, sgn(op.V), "V", op.V > 0 ? `delivers ${(op.V * S.j).toFixed(2)} mW cm⁻²` : `needs ${(-op.V * S.j).toFixed(2)} mW cm⁻² of external power`, op.V > 0 ? "pos" : "neg");
+  ro("Anode / cathode potential", `${f3(op.Ea)} / ${sgn(op.Ec)}`, "V", `overpotentials ${f3(op.Ea - p.E0_UOR)} and ${f3(E0.NO3RR - op.Ec)} V`);
+  ro("Nitrate Faradaic efficiency", pct(op.FE_NO3, 1), null, `HER takes ${pct(1 - op.FE_NO3, 1)}; j_lim ${jLimNo3(p.C_NO3, p.delta_um).toFixed(1)} mA cm⁻²`);
+  ro("Urea Faradaic efficiency", pct(op.FE_UOR, 1), null, p.UOR_on === false ? "no urea: the anode evolves oxygen" : `OER takes ${pct(1 - op.FE_UOR, 1)}`);
+  const ctl = solveCell(S.j, Object.assign({}, p, { UOR_on: false }));
+  $("answer").innerHTML = `<p>At ${+S.j.toPrecision(3)} mA cm⁻² and ${+p.C_NO3.toPrecision(3)} mM nitrate the cell ${op.V > 0 ? `<b>delivers power</b> (${sgn(op.V)} V)` : `<b>needs an external bias of ${f3(-op.V)} V</b>`}. ` + (p.UOR_on === false ? "With no urea the anode only evolves oxygen." : `Urea saves ${f3(op.V - ctl.V)} V compared with an anode that only evolves oxygen.`) + ` A self-powered cell needs the two overpotentials and jR<sub>Ω</sub> together to stay below E°<sub>cell</sub> = ${f3(E0.NO3RR - p.E0_UOR)} V.</p>`;
+}
+function update(skip) {
+  for (const t of TABS) { const on = t === S.tab; $("t-" + t).setAttribute("aria-selected", String(on)); $("p-" + t).hidden = !on; }
+  for (const b of $("presets").querySelectorAll(".preset")) { const sc = DATA.scenarios[b.dataset.preset]; b.setAttribute("aria-pressed", String(Object.keys(sc).every((k) => k === "C_NO3" || sc[k] === S[k]) && (sc.UOR_on ?? true) === (S.UOR_on !== false))); }
+  for (const b of $("segE0").querySelectorAll("button")) b.setAttribute("aria-pressed", String(Math.abs(+b.dataset.v - S.E0_UOR) < 1e-9));
+  $("cUor").checked = S.UOR_on !== false; $("cRef").checked = S.ref; syncs.forEach((s) => s(skip));
+  const p = params(), op = solveCell(S.j, p);
+  const bad = !isFinite(op.V); $("alert").hidden = !bad; if (bad) $("alert").textContent = "No solution for these parameters: an electrode cannot carry this current between −3 V and its equilibrium potential.";
+  renderReadouts(p, op);
+  if (S.tab === "cell") renderCell(p, op); else if (S.tab === "data") renderData(p); else if (S.tab === "batch") renderBatch(p); else renderParams(p);
+  saveHash();
+}
+update();
+</script>
