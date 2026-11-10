@@ -174,7 +174,7 @@ a { color: var(--accent-ink); }
   <header class="head">
     <h1><span class="en">Urea-Nitrate-Cell · urea oxidation ‖ nitrate reduction · pH 14, 25 °C</span>Can a urea–nitrate cell clean water and make power?</h1>
     <p class="sys">Urea is oxidized at the anode and nitrate reduced to ammonia at the cathode. Move the catalyst and operating parameters on the left and the cell is solved again in the browser with the model of <b>urea_nitrate_cell</b>: both electrode potentials from current balances, Faradaic efficiencies, a comparison with the published LSV data, and a batch treatment run. Potentials are V vs RHE.</p>
-    <p class="links"><a href="https://github.com/Shuruyue/Urea-Nitrate-Cell">Repository</a><a href="https://github.com/Shuruyue/Urea-Nitrate-Cell/blob/main/VALIDATION.md">47 validation checks</a></p>
+    <p class="links"><a href="https://github.com/Shuruyue/Urea-Nitrate-Cell">Repository</a><a href="https://github.com/Shuruyue/Urea-Nitrate-Cell/blob/main/VALIDATION.md">Validation table</a></p>
   </header>
 
   <section class="readouts" aria-label="Results at the operating point" id="readouts"></section>
@@ -249,7 +249,7 @@ a { color: var(--accent-ink); }
         <div class="card"><h3>Parameters now and in the fitted scenario S1</h3><div class="tablewrap" style="border:0;padding:0;margin-top:8px"><table id="paramTable"></table></div></div>
         <div class="card src">
           <h3>Checks</h3>
-          <p>The JavaScript model of this page is a line-by-line copy of <code>urea_nitrate_cell/model.py</code> and of the measured-curve functions of <code>calibration.py</code>. <code>scripts/verify_web_page.py</code> runs it in Node.js for random parameter sets and compares cell voltages, electrode potentials, Faradaic efficiencies, limiting currents, measured LSV currents and whole batch runs with the Python package; the test (part of the pytest suite) passes only if they agree to a relative 10⁻⁸. The model itself is checked by the 47 validation checks of the repository.</p>
+          <p>The JavaScript model of this page is a line-by-line copy of <code>urea_nitrate_cell/model.py</code> and of the measured-curve functions of <code>calibration.py</code>. <code>scripts/verify_web_page.py</code> runs it in Node.js for random parameter sets and compares cell voltages, electrode potentials, Faradaic efficiencies, limiting currents, measured LSV currents and whole batch runs with the Python package; the test (part of the pytest suite) passes only if they agree to a relative 10⁻⁸. The model itself is checked by the 36 validation checks of the repository; the fit to the LSV data is reported there as metrics, without a pass/fail threshold.</p>
           <p>Calibration is not independent validation: S1 is fitted to the same LSV curves, and no full-cell data exist yet to test the absolute cell voltage. S2, S3 and R<sub>Ω</sub> are assumptions.</p>
         </div>
         <div class="card src">

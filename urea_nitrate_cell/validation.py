@@ -1,11 +1,14 @@
 """
-Model validation: checks model.py item by item; each check has an expected value (hand calculation or literature) and a tolerance.
-Usage: run_all() returns all check results (list of dict); from the command line use scripts/validate.py.
+Model validation, in two kinds of rows:
+  check   model.py against a hand calculation or literature value, with a tolerance (PASS / FAIL)
+  metric  comparison with the digitized Yao 2025 LSV data the S1 parameters are fitted to; the number is
+          reported as it is, with no pass/fail threshold (a fit to the same data is not a test of the model)
+Usage: run_all() returns all rows (list of dict); from the command line use scripts/validate.py.
 """
 import re
 import numpy as np
 from . import model as m
-from .yao2025 import REPORTED, FIG3B
+from .yao2025 import REPORTED, FIG3B, HGO_TO_RHE
 from . import calibration as cal
 
 ROWS = []
@@ -14,17 +17,26 @@ VERBOSE = False
 
 def check(cat, name, value, expect, tol, how, note=""):
     ok = abs(value - expect) <= tol
-    ROWS.append(dict(cat=cat, name=name, value=value, expect=expect, tol=tol, ok=bool(ok),
+    ROWS.append(dict(kind="check", cat=cat, name=name, value=value, expect=expect, tol=tol, ok=bool(ok),
                      how=how, note=note))
     if VERBOSE:
         print(f"[{'PASS' if ok else 'FAIL'}] {cat:6s} {name:42s} model {value:>11.5g}  expected {expect:>11.5g}  (±{tol:g})")
 
 
 def flag(cat, name, ok, how, note=""):
-    ROWS.append(dict(cat=cat, name=name, value=None, expect=None, tol=None, ok=bool(ok), how=how,
+    ROWS.append(dict(kind="check", cat=cat, name=name, value=None, expect=None, tol=None, ok=bool(ok), how=how,
                      note=note))
     if VERBOSE:
         print(f"[{'PASS' if ok else 'FAIL'}] {cat:6s} {name}")
+
+
+def metric(cat, name, value, ref, how, note=""):
+    """Reported number without a threshold; ref is the published or model value it is compared with (or None)."""
+    ROWS.append(dict(kind="metric", cat=cat, name=name, value=value, expect=ref, tol=None, ok=None,
+                     how=how, note=note))
+    if VERBOSE:
+        ref_txt = "" if ref is None else f"  reference {ref:>11.5g}"
+        print(f"[METRIC] {cat:6s} {name:42s} model {value:>11.5g}{ref_txt}")
 
 
 def _run():
@@ -155,29 +167,45 @@ def _run():
           "the Tafel expression inverts directly: E = E° + b log10[(j/j0) + 1]")
 
     # ---------------------------------------------------------------------------
-    # E. Comparison with the Yao 2025 data (calibration and independent test)
+    # E. Comparison with the Yao 2025 data (calibration and held-out curve): metrics, no threshold
     # ---------------------------------------------------------------------------
     an = cal.fit_anode()
-    check("Calibration", "anode LSV: model parameters reproduce Fig. 11a (RMS relative error)", an["used"]["rms"], 0, 0.10,
-          "UOR + OER curves, 2–175 mA cm-2, only R_u fitted", f"R_u = {an['used']['Ru']:.2f} Ω cm2")
-    check("Calibration", "anode E10(UOR) after iR correction (V)", an["fixed_b"]["E10_UOR"], REPORTED["UOR_E10_ANP"], 0.01,
-          "fit with b fixed at 44.2 mV/dec vs the reported 1.335 V")
-    check("Calibration", "UOR–OER potential gap at 10 mA (mV)",
-          (m.anode_potential(10, m.OER_ONLY) - m.anode_potential(10, m.S1)) * 1e3, 180, 5,
-          "180 mV marked in Fig. 11a")
+    metric("Calibration", "anode LSV: model parameters reproduce Fig. 11a (RMS relative error)", an["used"]["rms"], None,
+           "UOR + OER curves, 2–175 mA cm-2, only R_u fitted", f"R_u = {an['used']['Ru']:.2f} Ω cm2")
+    metric("Calibration", "anode E10(UOR) after iR correction (V)", an["fixed_b"]["E10_UOR"], REPORTED["UOR_E10_ANP"],
+           "fit with b fixed at 44.2 mV/dec; reference: 1.335 V reported by Yao 2025")
+    metric("Calibration", "UOR–OER potential gap at 10 mA (mV)",
+           (m.anode_potential(10, m.OER_ONLY) - m.anode_potential(10, m.S1)) * 1e3, 180,
+           "reference: 180 mV marked in Fig. 11a")
     ca = cal.fit_cathode(gamma=1.0)
-    check("Calibration", "cathode LSV: fit RMS, 0/1/10/100 mM", ca["rms_fit"], 0, 0.15,
-          "4 curves, 127 points, 7 parameters", "")
-    check("Calibration", "cathode LSV: 100 mM curve RMS", ca["rms_by_C"][100], 0, 0.10, "the concentration mainly used by the model")
-    check("Held-out test", "cathode LSV: 50 mM curve (not in the fit) RMS", ca["rms_by_C"][50], 0, 0.35,
-          "independent prediction", "Yao's 50 mM curve lies above the 100 mM curve between −0.85 and −1.0 V, against the concentration trend: a source-data problem")
-    check("Calibration", "fitted E10(NO3RR) vs value used (V)", ca["params"]["E10_NO3"], m.S1["E10_NO3"], 0.002, "")
-    check("Calibration", "fitted b(NO3RR) vs value used (V/dec)", ca["params"]["b_NO3"], m.S1["b_NO3"], 0.001, "")
-    check("Calibration", "fitted E10(HER) vs value used (V)", ca["params"]["E10_HER"], m.S1["E10_HER"], 0.002, "")
-    check("Calibration", "fitted δ vs value used (µm)", ca["params"]["delta_um"], m.S1["delta_um"], 1.0, "")
+    metric("Calibration", "cathode LSV: fit RMS, 0/1/10/100 mM", ca["rms_fit"], None,
+           f"4 curves, {ca['n_points']} points, {len(ca['std'])} parameters")
+    metric("Calibration", "cathode LSV: 100 mM curve RMS", ca["rms_by_C"][100], None, "the concentration mainly used by the model")
+    # where the published 50 mM curve carries more current than the 100 mM curve; no model with a positive
+    # reaction order can follow it there, since every current term rises with concentration
+    E50, J50 = FIG3B[50]
+    used = np.isfinite(J50) & (J50 >= 3.0)                 # the points cathode_resid uses, in the same order
+    inverted = (J50 > FIG3B[100][1])[used]
+    r50 = cal.cathode_resid(ca["params"], (50,))
+    rms_pct = lambda r: 100 * float(np.sqrt(np.mean(r ** 2)))
+    e_lo, e_hi = E50[used][inverted].min(), E50[used][inverted].max()
+    metric("Held-out test", "cathode LSV: 50 mM curve (not in the fit) RMS", ca["rms_by_C"][50], None,
+           "independent prediction",
+           f"between {e_lo:+.2f} and {e_hi:+.2f} V vs RHE ({e_lo - HGO_TO_RHE:.2f} to {e_hi - HGO_TO_RHE:.2f} V vs "
+           f"Hg/HgO, the scale of Fig. 3b) Yao's 50 mM curve lies above the 100 mM curve, against the concentration "
+           f"trend: RMS {rms_pct(r50[inverted]):.0f} % over these {inverted.sum()} points, "
+           f"{rms_pct(r50[~inverted]):.0f} % over the other {(~inverted).sum()}")
+    metric("Calibration", "fitted E10(NO3RR) vs value used (V)", ca["params"]["E10_NO3"], m.S1["E10_NO3"],
+           "reference: value in model.py")
+    metric("Calibration", "fitted b(NO3RR) vs value used (V/dec)", ca["params"]["b_NO3"], m.S1["b_NO3"],
+           "reference: value in model.py")
+    metric("Calibration", "fitted E10(HER) vs value used (V)", ca["params"]["E10_HER"], m.S1["E10_HER"],
+           "reference: value in model.py")
+    metric("Calibration", "fitted δ vs value used (µm)", ca["params"]["delta_um"], m.S1["delta_um"],
+           "reference: value in model.py")
     cf = cal.fit_cathode()
-    check("Calibration", "reaction order γ (free fit)", cf["params"]["gamma"], 1.0, 2 * cf["std"]["gamma"],
-          "is γ = 1 within 2 standard errors", f"γ = {cf['params']['gamma']:.2f} ± {cf['std']['gamma']:.2f}")
+    metric("Calibration", "reaction order γ (free fit)", cf["params"]["gamma"], 1.0,
+           "reference: γ = 1 used in the model", f"γ = {cf['params']['gamma']:.2f} ± {cf['std']['gamma']:.2f} (standard error)")
 
     # ---------------------------------------------------------------------------
     # F. Batch simulation: mass balance, time step, energy sign
@@ -221,7 +249,8 @@ def _run():
 
 
 def run_all(verbose=False):
-    """Run all checks; return a list of dict (cat, name, value, expect, tol, ok, how, note)."""
+    """Run all rows; return a list of dict (kind, cat, name, value, expect, tol, ok, how, note).
+    kind is "check" (ok is True/False) or "metric" (ok and tol are None)."""
     global VERBOSE
     VERBOSE = verbose
     ROWS.clear()

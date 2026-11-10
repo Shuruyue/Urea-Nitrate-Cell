@@ -5,7 +5,7 @@ Modules
 model        thermodynamics, single-electrode kinetics, full-cell solver, sensitivity, batch simulation
 yao2025      data digitized from the figures of Yao et al., Sustainability 17, 3835 (2025) (CC BY 4.0)
 calibration  fit of the model parameters to the yao2025 LSV data
-validation   47 automated checks (run_all)
+validation   36 automated checks + 11 calibration metrics (run_all)
 summary      main results (compute)
 plotting     figures
 """
