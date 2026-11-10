@@ -27,7 +27,7 @@ All potentials are V vs RHE at pH 14 and 25 °C; current densities are in mA cm�
 - **Operating-mode map** — cell voltage over the (anode E₁₀, cathode E₁₀) plane from the full model, with spontaneous and side-reaction regions.
 - **Batch treatment** — Faradaic-law integration of nitrate removal under constant current or concentration-following current; energy per kg N.
 - **Calibration** — least-squares fit to published LSV curves including an uncompensated-resistance term; one curve held out as an independent test.
-- **Validation** — 47 automated checks plus unit tests, run in CI on every push.
+- **Validation** — 36 automated pass/fail checks and 11 calibration metrics reported without a threshold, plus unit tests, run in CI on every push.
 
 ## Quick Start
 
@@ -61,10 +61,10 @@ print(batch["FE_avg"], batch["t_end"])    # 0.742  2.65 h
 ```bash
 pytest -q                               # unit tests + full validation suite
 python scripts/verify_web_page.py       # JavaScript model of the interactive page vs the package (needs Node.js)
-python scripts/validate.py --markdown   # 47 checks → outputs/validation_table.json and VALIDATION.md
+python scripts/validate.py --markdown   # 36 checks + 11 metrics → outputs/validation_table.json and VALIDATION.md
 ```
 
-`scripts/validate.py` exits with code 1 if any check fails. The full table is in [VALIDATION.md](VALIDATION.md).
+`scripts/validate.py` exits with code 1 if any check fails; the calibration metrics have no threshold. The full table is in [VALIDATION.md](VALIDATION.md).
 
 ## Project Structure
 
@@ -74,7 +74,7 @@ Urea-Nitrate-Cell/
 │   ├── model.py         # thermodynamics, kinetics, full-cell solver, sensitivity, batch simulation
 │   ├── yao2025.py       # LSV data digitized from Yao et al. 2025 (Figs. 3b, 11a, 14d)
 │   ├── calibration.py   # least-squares parameter fit with uncompensated resistance
-│   ├── validation.py    # 47 automated checks (run_all)
+│   ├── validation.py    # 36 checks + 11 calibration metrics (run_all)
 │   ├── summary.py       # main results (compute)
 │   └── plotting.py      # figures (14 cm wide, 300 dpi)
 ├── scripts/             # command-line entry points; build_web_page.py writes the page's data block
@@ -185,18 +185,18 @@ At 10 mA cm⁻² and 100 mM nitrate:
 
 ## Validation
 
-| Category | Checks | Examples |
+| Category | Rows | Examples |
 |---|---|---|
 | Stoichiometry | 4 | atom and charge balance of every reaction |
 | Thermodynamics | 7 | E° from ΔfG° vs literature; ΔG° = −nFE°; Nernst shift 22.2 mV |
 | Kinetics | 7 | current at E₁₀ equals 10 mA cm⁻²; numerical Tafel slope equals input |
 | Mass transport | 4 | j_lim vs hand calculation; both Koutecký–Levich limits |
 | Numerics | 5 | residuals < 10⁻⁸ mA cm⁻²; monotonic potentials; 0 ≤ FE ≤ 1; analytic inverse |
-| Calibration / independent test | 11 | reproduces published LSV (8.5 %, 7 % RMS); 180 mV UOR–OER gap; held-out 50 mM curve |
+| Calibration / held-out test | 11 metrics | no pass/fail threshold: published LSV reproduced with 8.5 % (anode) and 12 % (cathode, 7 % at 100 mM) RMS error; 180 mV UOR–OER gap; held-out 50 mM curve 29 % |
 | Batch | 8 | mass balance; Faradaic-law hand check; time-step convergence; energy sign |
 | Operating-mode map | 1 | straight-line approximation within 4 mV where side reactions are negligible |
 
-Calibration is not independent validation: the S1 parameters are fitted to the same LSV curves, and no independent full-cell data are yet available to test the absolute cell voltage. The held-out 50 mM curve deviates by 29 % RMS; in the source data it lies above the 100 mM curve near 0 V vs RHE, against the trend of the other concentrations.
+Calibration is not independent validation: the S1 parameters are fitted to the same LSV curves, and no independent full-cell data are yet available to test the absolute cell voltage. The held-out 50 mM curve deviates by 29 % RMS. In the source data it lies above the 100 mM curve between −0.08 and +0.14 V vs RHE, against the trend of the other concentrations; over those 23 points the error is 37 %, over the other 18 it is 14 %, close to the fitted curves.
 
 ## Limitations
 

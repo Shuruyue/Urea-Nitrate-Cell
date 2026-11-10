@@ -23,7 +23,7 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Unit tests and full validation (pytest)
         run: pytest -q
-      - name: Validation table (47 checks, fails the job on any FAIL)
+      - name: Validation table (36 checks + 11 metrics, fails the job on any FAIL)
         run: python scripts/validate.py
       - name: Main results
         run: python scripts/summary.py
